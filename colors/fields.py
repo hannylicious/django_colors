@@ -7,6 +7,7 @@ from .widgets import ColorChoiceWidget
 from .color_definitions import ColorChoices, BootstrapColorChoices
 from .field_type import FieldType
 
+
 class ColorModelField(CharField):
     choice_model: Model
     choice_queryset: QuerySet
@@ -16,17 +17,17 @@ class ColorModelField(CharField):
 
     def __init__(
         self,
-        model: Model|None=None,
-        queryset: QuerySet|None=None,
-        value_attribute: FieldType=FieldType.BACKGROUND,
-        default_options: ColorChoices=BootstrapColorChoices,
+        model: Model | None = None,
+        queryset: QuerySet | None = None,
+        value_attribute: FieldType = FieldType.BACKGROUND,
+        default_options: ColorChoices = BootstrapColorChoices(),
         *args,
         **kwargs,
     ):
         self.choice_model = model
         self.choice_queryset = queryset
         self.value_attribute = value_attribute
-        self.default_options = default_options() #Instance of ColorChoices
+        self.default_options = default_options
         kwargs.setdefault("max_length", 150)
 
         super().__init__(*args, **kwargs)
@@ -51,30 +52,32 @@ class ColorModelField(CharField):
         return name, path, args, kwargs
 
     def formfield(self, **kwargs):
-
         """Creates a forms.ChoiceField with a custom widget and choices."""
 
         kwargs["widget"] = ColorChoiceWidget
 
         return ChoiceField(choices=self.get_choices, **kwargs)
 
-
     def get_choices(self):
-        """ Returns a list of choices for the field. """
-        choices = list(self.default_options.choices) #default choices
+        """Returns a list of choices for the field."""
+        choices = list(self.default_options.choices)  # default choices
 
-        #empty list if no model or queryset is set
+        # empty list if no model or queryset is set
         query_model_options = []
 
-        #get model or queryset options just by name (no label required)
+        # get model or queryset options just by name (no label required)
         if self.choice_queryset is not None:
-            query_model_options = self.choice_queryset.values_list("name", flat=True) 
+            query_model_options = self.choice_queryset.values_list(
+                self.value_attribute, "name"
+            )
 
         elif self.choice_model is not None:
-            query_model_options = self.choice_model.objects.all().values_list("name", flat=True)
+            query_model_options = self.choice_model.objects.all().values_list(
+                self.value_attribute, "name"
+            )
 
-
-        #add model or queryset options to choices
-        choices.extend([(name, name) for name in query_model_options])
+        # add model or queryset options to choices
+        choices.extend(query_model_options)
 
         return choices
+
