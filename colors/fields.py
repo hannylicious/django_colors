@@ -26,7 +26,7 @@ class ColorModelField(CharField):
         self.choice_model = model
         self.choice_queryset = queryset
         self.value_attribute = value_attribute
-        self.default_options = default_options() #Instance of ColorChoices
+        self.default_options = default_options(field_type= self.value_attribute) #Instance of ColorChoices
         kwargs.setdefault("max_length", 150)
 
         super().__init__(*args, **kwargs)

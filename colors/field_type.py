@@ -1,5 +1,5 @@
 from enum import Enum
 
 class FieldType(Enum):
-    BACKGROUND = 'bg_css'
+    BACKGROUND = 'background_css'
     TEXT = 'text_css'

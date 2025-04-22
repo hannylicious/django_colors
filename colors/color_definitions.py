@@ -4,8 +4,7 @@ from dataclasses import dataclass, field
 from django.utils.translation import gettext_lazy as _
 from typing import Optional, Dict, List, Tuple
 
-if TYPE_CHECKING:
-    from .field_type import FieldType
+from .field_type import FieldType
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,13 +14,8 @@ class ColorOption:
     background_css: str = field(default_factory=str)
     text_css: str = field(default_factory=str)
     
-    @property
-    def instance_choices(self):
-        return (self.value, self.label)
-
-    @property
-    def extended_choices(self):
-        return (self.value, self.label, self.background_css, self.text_css)
+    def instance_choices(self, field_type: FieldType = None):
+        return (getattr(self, field_type.value), self.label)
     
     def get_by_type(self, field_type: FieldType):
         return getattr(self, field_type.value)
@@ -30,6 +24,7 @@ class ColorOption:
 @dataclass(frozen=True, slots=True)
 class ColorChoices:
     _value_map: Dict[str, ColorOption] = field(init=False, default_factory=dict)
+    field_type: FieldType = field(default=FieldType.BACKGROUND)
 
     def __post_init__(self):
         for color in self.__slots__:
@@ -52,11 +47,7 @@ class ColorChoices:
 
     @property
     def choices(self) -> List[Tuple[str, str]]:
-        return [color.instance_choices for color in self.get_options_dict.values()]
-
-    @property
-    def extended_choices(self) -> List[Tuple[str, str, str, str]]:
-        return [color.extended_choices for color in self.get_options_dict.values()]
+        return [color.instance_choices(self.field_type) for color in self.get_options_dict.values()]
     
     def __iter__(self):
         return iter(self.get_options_dict.values())
