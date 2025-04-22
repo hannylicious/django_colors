@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class ColorOption:
     value: str = field(default_factory=str)
     label: str = field(default_factory=str)
-    bg_css: str = field(default_factory=str)
+    background_css: str = field(default_factory=str)
     text_css: str = field(default_factory=str)
     
     @property
@@ -21,7 +21,7 @@ class ColorOption:
 
     @property
     def extended_choices(self):
-        return (self.value, self.label, self.bg_css, self.text_css)
+        return (self.value, self.label, self.background_css, self.text_css)
     
     def get_by_type(self, field_type: FieldType):
         return getattr(self, field_type.value)
