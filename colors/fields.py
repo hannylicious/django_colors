@@ -62,7 +62,6 @@ class ColorModelField(CharField):
                 )
             )
 
-        widget = ColorChoiceWidget(choices=choices)
+        kwargs["widget"] = ColorChoiceWidget(choices=choices)
 
-        return ChoiceField(choices=choices, widget=widget, **kwargs)
-
+        return ChoiceField(choices=choices, **kwargs)
