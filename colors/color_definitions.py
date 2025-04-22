@@ -15,17 +15,17 @@ class ColorChoices(TextChoices):
     GRAY = "gray", "Gray"
 
     @property
-    def bg_css_class(self):
+    def background_css(self):
         return ""
 
     @property
-    def text_css_class(self):
+    def text_css(self):
         return ""
 
     @classmethod
     def choices_list(cls):
         options = [
-            (member.value, member.label, member.bg_css_class, member.text_css_class)
+            (member.value, member.label, member.background_css, member.text_css)
             for member in cls
         ]
         return options
@@ -45,8 +45,8 @@ class BootstrapColorChoices(TextChoices):
     GRAY = "gray", "Gray"
 
     @property
-    def bg_css_class(self):
-        bg_classes = {
+    def background_css(self):
+        background_classes = {
             "blue": "bg-primary-200",
             "green": "bg-success-200",
             "yellow": "bg-warning-200",
@@ -59,10 +59,10 @@ class BootstrapColorChoices(TextChoices):
             "cyan": "bg-cyan-200",
             "gray": "bg-gray-200",
         }
-        return bg_classes.get(self.value, "")
+        return background_classes.get(self.value, "")
 
     @property
-    def text_css_class(self):
+    def text_css(self):
         text_classes = {
             "blue": "text-primary",
             "green": "text-success",
@@ -81,7 +81,7 @@ class BootstrapColorChoices(TextChoices):
     @classmethod
     def choices_list(cls):
         options = [
-            (member.value, member.label, member.bg_css_class, member.text_css_class)
+            (member.value, member.label, member.background_css, member.text_css)
             for member in cls
         ]
         return options
