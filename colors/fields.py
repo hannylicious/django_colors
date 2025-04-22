@@ -54,30 +54,27 @@ class ColorModelField(CharField):
 
         """Creates a forms.ChoiceField with a custom widget and choices."""
 
-        def get_choices():
-            """ Returns a list of choices for the field. """
-            choices = list(self.default_options.choices)
-
-            #empty list if no model or queryset is set
-            query_model_options = []
-
-            #get model or queryset options just by name (no label required)
-            if self.choice_queryset is not None:
-                query_model_options = self.choice_queryset.values_list("name", flat=True) 
-
-            elif self.choice_model is not None:
-                try:
-                    query_model_options = self.choice_model.objects.all().values_list("name", flat=True)
-                except Exception:
-                    #avoid the model not being ready yet in migrations
-                    pass
-
-            #add model or queryset options to choices
-            choices.extend([(name, name) for name in query_model_options])
-
-            return choices
-
         kwargs["widget"] = ColorChoiceWidget
 
-        return ChoiceField(choices=get_choices, **kwargs)
+        return ChoiceField(choices=self.get_choices, **kwargs)
 
+
+    def get_choices(self):
+        """ Returns a list of choices for the field. """
+        choices = list(self.default_options.choices) #default choices
+
+        #empty list if no model or queryset is set
+        query_model_options = []
+
+        #get model or queryset options just by name (no label required)
+        if self.choice_queryset is not None:
+            query_model_options = self.choice_queryset.values_list("name", flat=True) 
+
+        elif self.choice_model is not None:
+            query_model_options = self.choice_model.objects.all().values_list("name", flat=True)
+
+
+        #add model or queryset options to choices
+        choices.extend([(name, name) for name in query_model_options])
+
+        return choices
