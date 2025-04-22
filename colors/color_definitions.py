@@ -1,11 +1,11 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from django.utils.translation import gettext_lazy as _
-from enum import Enum
 from typing import Optional, Dict, List, Tuple
 
-class FieldType(Enum):
-    BACKGROUND = 'bg_css'
-    TEXT = 'text_css'
+if TYPE_CHECKING:
+    from .field_type import FieldType
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,19 +75,3 @@ class BootstrapColorChoices(ColorChoices):
     TEAL: ColorOption = ColorOption('teal', 'Teal', 'bg-teal-200', 'text-teal')
     CYAN: ColorOption = ColorOption('cyan', 'Cyan', 'bg-cyan-200', 'text-cyan')
     GRAY: ColorOption = ColorOption('gray', 'Gray', 'bg-gray-200', 'text-gray')
-
-
-test = BootstrapColorChoices()
-
-print('*'*15)
-
-print(test.BLUE.get_by_type(FieldType.BACKGROUND))
-
-print('*'*15)
-print(test.BLUE.get_by_type(FieldType.TEXT))
-
-print('*'*15)
-print(test.choices)
-
-print('*'*15)
-print(test.extended_choices)
