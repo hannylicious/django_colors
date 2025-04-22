@@ -1,19 +1,20 @@
 # Build Settings
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
 
 [project]
-name = "framework_colors"
-version = "2025.04.15"
+name = "colors"
+version = "2025.04.17"
 description = "Framework color selections."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-  "django>=4.2",
-]
+dependencies = ["django>=4.2"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
   "Framework :: Django",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["colors"]

@@ -1,5 +1,5 @@
-<li class="dropdown-item {{ widget.bg_css_class }}">
-    <a class="dropdown-item {{ widget.text_css_class }}" href="#" {% include "django/forms/widgets/attrs.html" %}>
-        {{ widget.label }}
-    </a>
-</li>
+<option 
+    value="{{ widget.value|stringformat:'s' }}"
+    {% include "django/forms/widgets/attrs.html" %} >
+    {{ widget.label }}
+</option>
