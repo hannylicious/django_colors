@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from django.utils.translation import gettext_lazy as _
 from typing import Optional, Dict, List, Tuple
@@ -13,10 +12,10 @@ class ColorOption:
     label: str = field(default_factory=str)
     background_css: str = field(default_factory=str)
     text_css: str = field(default_factory=str)
-    
+
     def instance_choices(self, field_type: FieldType = None):
         return (getattr(self, field_type.value), self.label)
-    
+
     def get_by_type(self, field_type: FieldType):
         return getattr(self, field_type.value)
 
@@ -47,22 +46,33 @@ class ColorChoices:
 
     @property
     def choices(self) -> List[Tuple[str, str]]:
-        return [color.instance_choices(self.field_type) for color in self.get_options_dict.values()]
-    
+        return [
+            color.instance_choices(self.field_type)
+            for color in self.get_options_dict.values()
+        ]
+
     def __iter__(self):
         return iter(self.get_options_dict.values())
 
 
 @dataclass(frozen=True, slots=True)
 class BootstrapColorChoices(ColorChoices):
-    BLUE: ColorOption = ColorOption('blue', 'Blue', 'bg-primary-200', 'text-primary')
-    GREEN: ColorOption = ColorOption('green', 'Green', 'bg-success-200', 'text-success')
-    YELLOW: ColorOption = ColorOption('yellow', 'Yellow', 'bg-warning-200', 'text-warning')
-    RED: ColorOption = ColorOption('red', 'Red', 'bg-danger-200', 'text-danger')
-    PURPLE: ColorOption = ColorOption('purple', 'Purple', 'bg-purple-200', 'text-purple')
-    INDIGO: ColorOption = ColorOption('indigo', 'Indigo', 'bg-indigo-200', 'text-indigo')
-    PINK: ColorOption = ColorOption('pink', 'Pink', 'bg-pink-200', 'text-pink')
-    ORANGE: ColorOption = ColorOption('orange', 'Orange', 'bg-orange-200', 'text-orange')
-    TEAL: ColorOption = ColorOption('teal', 'Teal', 'bg-teal-200', 'text-teal')
-    CYAN: ColorOption = ColorOption('cyan', 'Cyan', 'bg-cyan-200', 'text-cyan')
-    GRAY: ColorOption = ColorOption('gray', 'Gray', 'bg-gray-200', 'text-gray')
+    BLUE: ColorOption = ColorOption("blue", "Blue", "bg-primary-200", "text-primary")
+    GREEN: ColorOption = ColorOption("green", "Green", "bg-success-200", "text-success")
+    YELLOW: ColorOption = ColorOption(
+        "yellow", "Yellow", "bg-warning-200", "text-warning"
+    )
+    RED: ColorOption = ColorOption("red", "Red", "bg-danger-200", "text-danger")
+    PURPLE: ColorOption = ColorOption(
+        "purple", "Purple", "bg-purple-200", "text-purple"
+    )
+    INDIGO: ColorOption = ColorOption(
+        "indigo", "Indigo", "bg-indigo-200", "text-indigo"
+    )
+    PINK: ColorOption = ColorOption("pink", "Pink", "bg-pink-200", "text-pink")
+    ORANGE: ColorOption = ColorOption(
+        "orange", "Orange", "bg-orange-200", "text-orange"
+    )
+    TEAL: ColorOption = ColorOption("teal", "Teal", "bg-teal-200", "text-teal")
+    CYAN: ColorOption = ColorOption("cyan", "Cyan", "bg-cyan-200", "text-cyan")
+    GRAY: ColorOption = ColorOption("gray", "Gray", "bg-gray-200", "text-gray")

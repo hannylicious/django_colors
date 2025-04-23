@@ -11,7 +11,7 @@ from .field_type import FieldType
 class ColorModelField(CharField):
     choice_model: Model
     choice_queryset: QuerySet
-    value_attribute: FieldType
+    color_type: FieldType
     default_options: ColorChoices
     description = _("String for use with css (up to %(max_length)s)")
 
@@ -19,15 +19,15 @@ class ColorModelField(CharField):
         self,
         model: Model | None = None,
         queryset: QuerySet | None = None,
-        value_attribute: FieldType = FieldType.BACKGROUND,
-        default_options: ColorChoices = ColorChoices,
+        color_type: FieldType = FieldType.BACKGROUND,
+        default_options: ColorChoices = BootstrapColorChoices,
         *args,
         **kwargs,
     ):
         self.choice_model = model
         self.choice_queryset = queryset
-        self.value_attribute = value_attribute
-        self.default_options = default_options(field_type=self.value_attribute)
+        self.color_type = color_type
+        self.default_options = default_options(field_type=self.color_type)
         kwargs.setdefault("max_length", 150)
 
         super().__init__(*args, **kwargs)
@@ -38,13 +38,13 @@ class ColorModelField(CharField):
             "choice_model",
             "choice_queryset",
             "default_options",
-            "value_attribute",
+            "color_type",
         )
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
-        if self.value_attribute:
-            kwargs["value_attribute"] = self.value_attribute
+        if self.color_type:
+            kwargs["color_type"] = self.color_type
         if self.choice_model:
             kwargs["model"] = self.choice_model
         if self.choice_queryset:
@@ -68,12 +68,12 @@ class ColorModelField(CharField):
         # get model or queryset options just by name (no label required)
         if self.choice_queryset is not None:
             query_model_options = self.choice_queryset.values_list(
-                self.value_attribute.value, "name"
+                self.color_type.value, "name"
             )
 
         elif self.choice_model is not None:
             query_model_options = self.choice_model.objects.all().values_list(
-                self.value_attribute.value, "name"
+                self.color_type.value, "name"
             )
 
         # add model or queryset options to choices
