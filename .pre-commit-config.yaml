@@ -1,0 +1,43 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb", "500", "--enforce-all"]
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-merge-conflict
+      - id: check-yaml
+        exclude: ^static/vendors/
+      - id: detect-private-key
+      - id: end-of-file-fixer
+        exclude: ^static/vendors/
+      - id: no-commit-to-branch
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: ^static/vendors/
+
+  # ripsecrts
+  - repo: https://github.com/sirwart/ripsecrets
+    rev: v0.1.8
+    hooks:
+      - id: ripsecrets
+
+  # Djlint
+  - repo: https://github.com/djlint/djlint
+    rev: v1.36.3
+    hooks:
+      - id: djlint-reformat-django
+        exclude: ^static/vendors/
+      - id: djlint-django
+        exclude: ^static/vendors/
+
+  # Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.2
+    hooks:
+      - id: ruff-format
+        exclude: ^static/vendors/
+      - id: ruff
+        exclude: ^static/vendors/
