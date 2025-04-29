@@ -6,11 +6,7 @@ __pycache__
 db.sqlite3
 media
 
-# TestProject #
-
-framework_colors/
-test_app/
-manage.py
+# Templates dir
 templates/*
 
 # Backup files #
@@ -143,3 +139,6 @@ GitHub.sublime-settings
 !.vscode/launch.json
 !.vscode/extensions.json
 .history
+
+# Pycharm
+.idea/
