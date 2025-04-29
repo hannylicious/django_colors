@@ -9,6 +9,7 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
         exclude: ^static/vendors/
+      - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
         exclude: ^static/vendors/
