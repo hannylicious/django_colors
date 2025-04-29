@@ -20,13 +20,13 @@ repos:
 
   # ripsecrts
   - repo: https://github.com/sirwart/ripsecrets
-    rev: v0.1.8
+    rev: v0.1.9
     hooks:
       - id: ripsecrets
 
   # Djlint
   - repo: https://github.com/djlint/djlint
-    rev: v1.36.3
+    rev: v1.36.4
     hooks:
       - id: djlint-reformat-django
         exclude: ^static/vendors/
@@ -35,7 +35,7 @@ repos:
 
   # Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.11.7
     hooks:
       - id: ruff-format
         exclude: ^static/vendors/
