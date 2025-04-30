@@ -38,9 +38,9 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.7
     hooks:
-      - id: ruff-format
-        args: [--config, pyproject.toml]
-        exclude: ^static/vendors/
       - id: ruff
-        args: [--config, pyproject.toml]
+        args: [--fix]
+        exclude: ^static/vendors/
+      - id: ruff-format
+        args: []
         exclude: ^static/vendors/
