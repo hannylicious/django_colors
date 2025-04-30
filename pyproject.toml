@@ -47,10 +47,29 @@ select = [
   # flake8-pytest-style
   "PT",
   # isort
-  "I"
+  "I",
 ]
 # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
 ignore = [
+  "D203",
+  "D206",
+  "D212",
+  "D213",
+  "D214",
+  "D215",
+  "D300",
+  "D404",
+  "D405",
+  "D406",
+  "D407",
+  "D408",
+  "D409",
+  "D410",
+  "D411",
+  "D413",
+  "D415",
+  "D416",
+  "D417",
   "W191",
   "E111",
   "E114",
@@ -63,7 +82,7 @@ ignore = [
   "Q003",
   "COM812",
   "COM819",
-  "ISC002"
+  "ISC002",
 ]
 
 [tool.ruff.lint.per-file-ignores]
