@@ -1,11 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from django.utils.translation import gettext_lazy as _
-from typing import Optional, Dict, List, Tuple, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .field_type import FieldType
-    from enum import Enum
+from typing import Optional, Dict, List, Tuple
+from .field_type import FieldType
+from enum import Enum
 
 
 @dataclass(frozen=True, slots=True)
