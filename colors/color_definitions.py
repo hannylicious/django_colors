@@ -1,9 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from django.utils.translation import gettext_lazy as _
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, TYPE_CHECKING
 
-from .field_type import FieldType
+if TYPE_CHECKING:
+    from .field_type import FieldType
+    from enum import Enum
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,8 +15,8 @@ class ColorOption:
     background_css: str = field(default_factory=str)
     text_css: str = field(default_factory=str)
 
-    def instance_choices(self, field_type: FieldType = None):
-        return (getattr(self, field_type.value), self.label)
+    def instance_choices(self, field_type: FieldType | None = None):
+        return (getattr(self, field_type.value, self.value), self.label)
 
     def get_by_type(self, field_type: FieldType):
         return getattr(self, field_type.value)
@@ -23,7 +25,7 @@ class ColorOption:
 @dataclass(frozen=True, slots=True)
 class ColorChoices:
     _value_map: Dict[str, ColorOption] = field(init=False, default_factory=dict)
-    field_type: FieldType = field(default=FieldType.BACKGROUND)
+    field_type: Enum | None = field()
 
     def __post_init__(self):
         for color in self.__slots__:

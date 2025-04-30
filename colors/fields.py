@@ -4,15 +4,15 @@ from django.db.models.query import QuerySet
 from django.forms import ChoiceField
 from django.utils.translation import gettext as _
 from .widgets import ColorChoiceWidget
-from .color_definitions import ColorChoices, BootstrapColorChoices
-from .field_type import FieldType
+from .color_definitions import ColorChoices
 from colors import settings as color_settings
+
 
 
 class ColorModelField(CharField):
     choice_model: Model
     choice_queryset: QuerySet
-    color_type: FieldType
+    color_type: str | None
     default_color_choices: ColorChoices
     only_use_custom_colors: bool
     description = _("String for use with css (up to %(max_length)s)")
@@ -21,7 +21,7 @@ class ColorModelField(CharField):
         self,
         model: Model | None = None,
         queryset: QuerySet | None = None,
-        color_type: FieldType | None = None,
+        color_type: str | None = None,
         default_color_choices: ColorChoices | None = None,
         only_use_custom_colors: bool | None = None,
         *args,
@@ -89,7 +89,8 @@ class ColorModelField(CharField):
     def get_choices(self):
         """Returns a list of choices for the field."""
         default_color_choices = self.field_config.get("default_color_choices")
-        choices = list(default_color_choices().choices)  # default choices
+        field_type = self.field_config.get("color_type")
+        choices = list(default_color_choices(field_type).choices)  # default choices
 
         # empty list if no model or queryset is set
         query_model_options = []
@@ -97,11 +98,11 @@ class ColorModelField(CharField):
         # get model or queryset options just by name (no label required)
         if self.choice_queryset is not None:
             query_model_options = self.choice_queryset.values_list(
-                self.field_config.get("color_type").value, "name"
+                field_type.value, "name"
             )
         elif self.choice_model is not None:
             query_model_options = self.choice_model.objects.all().values_list(
-                self.field_config.get("color_type").value, "name"
+                field_type.value, "name"
             )
 
         # add model or queryset options to choices

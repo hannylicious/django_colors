@@ -1,7 +1,7 @@
 from django.conf import settings
 from colors.color_definitions import BootstrapColorChoices, ColorChoices
 from django.db.models import Field, Model
-from colors.fields import FieldType
+from colors.field_type import FieldType
 
 
 CONFIG_DEFAULTS = {
@@ -77,7 +77,7 @@ class FieldConfig:
         )
         return hierarchy_settings_config
 
-    def get_field_config(self, field_class) -> dict:
+    def get_field_config(self, field_class: Field) -> dict:
         required_field_config = [
             "default_color_choices",
             "color_type",
