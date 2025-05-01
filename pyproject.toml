@@ -16,6 +16,15 @@ classifiers = [
   "Framework :: Django",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "djlint",
+  "ruff",
+  "pytest",
+  "pytest-cov",
+  "pytest-django",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["colors"]
 
