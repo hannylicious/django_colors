@@ -36,7 +36,7 @@ class ColorModelField(CharField):
         color_type: FieldType | None = None,
         default_color_choices: type[ColorChoices] | None = None,
         only_use_custom_colors: bool | None = None,
-        *args: list,
+        *args: tuple,
         **kwargs: dict,
     ) -> None:
         """
