@@ -18,3 +18,76 @@ classifiers = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["colors"]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = [
+  # flake8-annotations
+  "ANN",
+  # flake8-bugbear
+  "B",
+  # mccabe
+  "C90",
+  # pycodestyle-errors
+  "E",
+  # pyflake
+  "F",
+  # pep8-naming
+  "N",
+  # pydocstyle
+  "D",
+  # pyupgrade
+  "UP",
+  # flake8-bandit
+  "S",
+  # flake8-django
+  "DJ",
+  # flake8-pytest-style
+  "PT",
+  # isort
+  "I",
+]
+# https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+ignore = [
+  "D203",
+  "D206",
+  "D212",
+  "D213",
+  "D214",
+  "D215",
+  "D300",
+  "D404",
+  "D405",
+  "D406",
+  "D407",
+  "D408",
+  "D409",
+  "D410",
+  "D411",
+  "D413",
+  "D415",
+  "D416",
+  "D417",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC002",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore S101 for files starting with 'test_' or 'tests_'
+"**/test_*.py" = ["S101"]
+"**/tests_*.py" = ["S101"]
+"**/*_test" = ["S101"]
+"**/*_tests" = ["S101"]
