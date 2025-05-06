@@ -30,6 +30,7 @@ addopts = [
   "--cov-config=pyproject.toml",
   "--cov=django_colors",
 ]
+django_find_project = False
 DJANGO_SETTINGS_MODULE = "django_colors.tests.settings"
 
 [tool.ruff]
