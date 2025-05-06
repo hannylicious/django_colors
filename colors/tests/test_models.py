@@ -56,6 +56,23 @@ class TestColorModel:
         :return: None
         """
         fields = [field.name for field in ColorModel._meta.fields]
+        # Abstract models, the id field might not be included in _meta.fields
+        # Check that the other fields are in the expected order
+        assert fields == ["name", "background_css", "text_css"]
+
+    def test_id_field_in_concrete_model(
+        self, concrete_color_model: pytest.fixture
+    ) -> None:
+        """
+        Test that a concrete subclass has an id field.
+
+        :param concrete_color_model: Fixture that provides a concrete
+            ColorModel subclass
+        :return: None
+        """
+        fields = [field.name for field in concrete_color_model._meta.fields]
+        assert "id" in fields
+        # Check full order
         assert fields == ["id", "name", "background_css", "text_css"]
 
     def test_meta_options(self) -> None:

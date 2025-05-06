@@ -61,7 +61,10 @@ class TestFieldType:
 
         :return: None
         """
-        with pytest.raises(ValueError, match="ValueError: .*"):
+        # Use the match parameter to check for the specific error message
+        with pytest.raises(
+            ValueError, match="'invalid_value' is not a valid FieldType"
+        ):
             FieldType("invalid_value")
 
     def test_field_type_attribute_access(self) -> None:
