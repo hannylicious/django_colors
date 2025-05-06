@@ -16,8 +16,31 @@ classifiers = [
   "Framework :: Django",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "djlint",
+  "ruff",
+  "pytest",
+  "pytest-cov",
+  "pytest-django",
+]
+
+[tool.coverage.run]
+omit = [
+  ".gitignore",
+  "**/tests/**",
+  "__init__.py",
+]
 [tool.hatch.build.targets.wheel]
 packages = ["colors"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+    "--cov-config=pyproject.toml",
+    "--cov=colors",
+]
+DJANGO_SETTINGS_MODULE = "colors.tests.settings"
 
 [tool.ruff]
 line-length = 79
