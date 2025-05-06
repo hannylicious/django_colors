@@ -1,4 +1,4 @@
-"""Common definitions for the colors app."""
+"""Common definitions for the django_colors app."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from django.utils.translation import gettext_lazy as _
 
-from colors.field_type import FieldType
+from django_colors.field_type import FieldType
 
 
 @dataclass(frozen=True, slots=True)

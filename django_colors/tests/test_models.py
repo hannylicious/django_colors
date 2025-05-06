@@ -4,7 +4,7 @@ import pytest
 from django.db import models
 from django.db.models.fields import CharField
 
-from colors.models import ColorModel
+from django_colors.models import ColorModel
 
 
 class TestColorModel:
@@ -82,7 +82,9 @@ class TestColorModel:
         :return: None
         """
         assert ColorModel._meta.abstract is True
-        assert ColorModel._meta.app_label == "colors"  # From the test settings
+        assert (
+            ColorModel._meta.app_label == "django_colors"
+        )  # From the test settings
 
     def test_concrete_subclass_creation(
         self, concrete_color_model: pytest.fixture

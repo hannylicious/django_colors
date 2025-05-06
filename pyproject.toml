@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-name = "colors"
-version = "2025.04.28"
+name = "django-colors"
+version = "1.0.0"
 description = "Framework color selections."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -17,30 +17,20 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = [
-  "djlint",
-  "ruff",
-  "pytest",
-  "pytest-cov",
-  "pytest-django",
-]
+dev = ["djlint", "ruff", "pytest", "pytest-cov", "pytest-django"]
 
 [tool.coverage.run]
-omit = [
-  ".gitignore",
-  "**/tests/**",
-  "__init__.py",
-]
+omit = [".gitignore", "**/tests/**", "__init__.py", "conftest.py"]
 [tool.hatch.build.targets.wheel]
-packages = ["colors"]
+packages = ["django-colors"]
 
 [tool.pytest.ini_options]
 addopts = [
-    "--import-mode=importlib",
-    "--cov-config=pyproject.toml",
-    "--cov=colors",
+  "--import-mode=importlib",
+  "--cov-config=pyproject.toml",
+  "--cov=django_colors",
 ]
-DJANGO_SETTINGS_MODULE = "colors.tests.settings"
+DJANGO_SETTINGS_MODULE = "django_colors.tests.settings"
 
 [tool.ruff]
 line-length = 79

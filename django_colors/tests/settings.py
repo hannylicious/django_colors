@@ -1,4 +1,4 @@
-"""Test settings for the colors app."""
+"""Test settings for the django_colors app."""
 
 import os
 
@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "colors",  # Add the colors app
+    "django_colors",
 ]
 
 MIDDLEWARE = [

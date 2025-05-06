@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 from django import forms
 
-from colors.widgets import ColorChoiceWidget
+from django_colors.widgets import ColorChoiceWidget
 
 
 class TestColorChoiceWidget:
