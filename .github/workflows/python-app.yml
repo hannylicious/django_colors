@@ -23,6 +23,8 @@ jobs:
       - name: Install the project
         run: uv sync --extra dev
 
+      - name: Run ruff linting
+        run: uv ruff check
       - name: Run tests
         # For example, using `pytest`
         run: uv run pytest
