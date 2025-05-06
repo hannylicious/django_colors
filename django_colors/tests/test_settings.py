@@ -4,9 +4,9 @@ from unittest.mock import ANY, Mock, patch
 
 import pytest
 
-from colors.color_definitions import BootstrapColorChoices, ColorChoices
-from colors.field_type import FieldType
-from colors.settings import CONFIG_DEFAULTS, FieldConfig, get_config
+from django_colors.color_definitions import BootstrapColorChoices, ColorChoices
+from django_colors.field_type import FieldType
+from django_colors.settings import CONFIG_DEFAULTS, FieldConfig, get_config
 
 
 class TestConfigDefaults:
@@ -46,7 +46,7 @@ class TestConfigDefaults:
 class TestGetConfig:
     """Test the get_config function."""
 
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.getattr")
     def test_get_config_with_no_user_config(self, mock_getattr: Mock) -> None:
         """
         Test get_config when no user config is provided.
@@ -61,7 +61,7 @@ class TestGetConfig:
         assert config == CONFIG_DEFAULTS
         mock_getattr.assert_called_once_with(ANY, "COLORS_APP_CONFIG", {})
 
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.getattr")
     def test_get_config_with_user_config(self, mock_getattr: Mock) -> None:
         """
         Test get_config when user config is provided.
@@ -86,7 +86,7 @@ class TestGetConfig:
         assert config == expected_config
         mock_getattr.assert_called_once_with(ANY, "COLORS_APP_CONFIG", {})
 
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.getattr")
     def test_get_config_does_not_modify_defaults(
         self, mock_getattr: Mock
     ) -> None:
@@ -112,8 +112,8 @@ class TestGetConfig:
 class TestFieldConfig:
     """Test the FieldConfig class."""
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_init_with_defaults_only(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:
@@ -152,7 +152,7 @@ class TestFieldConfig:
         assert field_config.config["choice_queryset"] is None
         assert field_config.config["only_use_custom_colors"] is False
 
-    @patch("colors.settings.get_config")
+    @patch("django_colors.settings.get_config")
     def test_init_with_django_settings(self, mock_get_config: Mock) -> None:
         """
         Test initialization with Django settings.
@@ -208,7 +208,7 @@ class TestFieldConfig:
         assert field_config.config["color_type"] == FieldType.TEXT
         assert field_config.config["only_use_custom_colors"] is False
 
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.getattr")
     def test_init_with_field_config(self, mock_getattr: Mock) -> None:
         """
         Test initialization with field configuration.
@@ -256,8 +256,8 @@ class TestFieldConfig:
         assert field_config.config["color_type"] == FieldType.TEXT
         assert field_config.config["only_use_custom_colors"] is False
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_get_method_valid_key(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:
@@ -290,8 +290,8 @@ class TestFieldConfig:
 
         assert value == BootstrapColorChoices
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_get_method_invalid_key(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:
@@ -412,8 +412,8 @@ class TestFieldConfig:
         assert "choice_model" not in result
         assert "choice_queryset" not in result
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_set_color_choices_with_custom_colors_no_model_or_queryset(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:
@@ -449,8 +449,8 @@ class TestFieldConfig:
         with pytest.raises(Exception, match="Cannot use custom colors .*"):
             field_config.set_color_choices()
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_set_color_choices_with_custom_colors_and_model(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:
@@ -488,8 +488,8 @@ class TestFieldConfig:
         # Should change default_color_choices to ColorChoices
         assert field_config.config["default_color_choices"] == ColorChoices
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_cast_color_type_with_string(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:
@@ -525,8 +525,8 @@ class TestFieldConfig:
         # Should cast the string to a FieldType enum value
         assert field_config.config["color_type"] == FieldType.TEXT
 
-    @patch("colors.settings.FieldConfig.get_settings_config")
-    @patch("colors.settings.getattr")
+    @patch("django_colors.settings.FieldConfig.get_settings_config")
+    @patch("django_colors.settings.getattr")
     def test_cast_color_type_with_enum_value(
         self, mock_getattr: Mock, mock_get_settings_config: Mock
     ) -> None:

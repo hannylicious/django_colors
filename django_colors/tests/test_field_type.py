@@ -4,7 +4,7 @@ from enum import Enum
 
 import pytest
 
-from colors.field_type import FieldType
+from django_colors.field_type import FieldType
 
 
 class TestFieldType:

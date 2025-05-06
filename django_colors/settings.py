@@ -1,12 +1,12 @@
-"""Configuration management for the colors app."""
+"""Configuration management for the django_colors app."""
 
 from typing import Any
 
 from django.conf import settings
 from django.db.models import Field, Model
 
-from colors.color_definitions import BootstrapColorChoices, ColorChoices
-from colors.field_type import FieldType
+from django_colors.color_definitions import BootstrapColorChoices, ColorChoices
+from django_colors.field_type import FieldType
 
 CONFIG_DEFAULTS: dict[str, dict[str, Any]] = {
     "default": {

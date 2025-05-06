@@ -6,10 +6,10 @@ import pytest
 from django.db import models
 from django.forms import ChoiceField
 
-from colors.color_definitions import BootstrapColorChoices
-from colors.field_type import FieldType
-from colors.fields import ColorModelField
-from colors.widgets import ColorChoiceWidget
+from django_colors.color_definitions import BootstrapColorChoices
+from django_colors.field_type import FieldType
+from django_colors.fields import ColorModelField
+from django_colors.widgets import ColorChoiceWidget
 
 
 @pytest.mark.django_db
@@ -108,7 +108,7 @@ class TestColorModelField:
         assert field.choice_queryset is queryset_mock
         assert field.only_use_custom_colors is True
 
-    @patch("colors.settings.get_config")
+    @patch("django_colors.settings.get_config")
     def test_get_config_dict(self, mock_get_config: Mock) -> None:
         """
         Test the get_config_dict method.
@@ -136,7 +136,7 @@ class TestColorModelField:
             mock_get_config.call_count == 2
         )  # Verify it was called exactly once
 
-    @patch("colors.settings.get_config")
+    @patch("django_colors.settings.get_config")
     def test_get_config_dict_default(self, mock_get_config: Mock) -> None:
         """
         Test the get_config_dict method with default values.
@@ -171,7 +171,7 @@ class TestColorModelField:
         :param mock_model_class: The mock model class fixture
         :return: None
         """
-        with patch("colors.settings.FieldConfig") as mock_field_config:
+        with patch("django_colors.settings.FieldConfig") as mock_field_config:
             field = ColorModelField()
             field.contribute_to_class(mock_model_class, "test_field")
 

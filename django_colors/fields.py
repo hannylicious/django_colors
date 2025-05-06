@@ -8,10 +8,10 @@ from django.db.models.query import QuerySet
 from django.forms import ChoiceField
 from django.utils.translation import gettext as _
 
-from colors import settings as color_settings
-from colors.color_definitions import ColorChoices
-from colors.field_type import FieldType
-from colors.widgets import ColorChoiceWidget
+from django_colors import settings as color_settings
+from django_colors.color_definitions import ColorChoices
+from django_colors.field_type import FieldType
+from django_colors.widgets import ColorChoiceWidget
 
 
 class ColorModelField(CharField):

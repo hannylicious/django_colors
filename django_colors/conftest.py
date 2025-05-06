@@ -3,13 +3,13 @@
 import pytest
 from django.db import models
 
-from colors.color_definitions import (
+from django_colors.color_definitions import (
     BootstrapColorChoices,
     ColorChoices,
     ColorOption,
 )
-from colors.field_type import FieldType
-from colors.models import ColorModel
+from django_colors.field_type import FieldType
+from django_colors.models import ColorModel
 
 
 @pytest.fixture

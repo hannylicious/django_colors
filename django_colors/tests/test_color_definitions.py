@@ -4,11 +4,11 @@ from collections.abc import Iterator
 
 import pytest
 
-from colors.color_definitions import (
+from django_colors.color_definitions import (
     ColorChoices,
     ColorOption,
 )
-from colors.field_type import FieldType
+from django_colors.field_type import FieldType
 
 
 class TestColorOption:
