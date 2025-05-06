@@ -1,1 +1,1 @@
-"""Colors application."""
+"""Django Colors application."""
