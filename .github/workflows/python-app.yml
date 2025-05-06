@@ -27,9 +27,10 @@ jobs:
           uv venv
           . .venv/bin/activate
           uv pip install -r pyproject.toml --extra dev
-      - name: Lint with ruff
+      - name: Set up Ruff
+      - uses: astral-sh/ruff-action@v3
+      - name: Run ruff
         run: |
-          # stop the build if there are Python syntax errors or undefined names
           ruff check .
       - name: Test with pytest
         run: |
