@@ -28,10 +28,6 @@ jobs:
           . .venv/bin/activate
           uv pip install -r pyproject.toml --extra dev
       - name: Set up Ruff
-        uses: astral-sh/ruff-action@v3
-      - name: Run ruff
-        run: |
-          ruff check .
+        run: ruff check
       - name: Test with pytest
-        run: |
-          pytest
+        run: pytest
