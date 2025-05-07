@@ -142,3 +142,6 @@ GitHub.sublime-settings
 
 # Pycharm
 .idea/
+
+# UV
+uv.lock
