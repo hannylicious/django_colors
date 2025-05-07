@@ -21,8 +21,9 @@ dev = ["djlint", "ruff", "pytest", "pytest-cov", "pytest-django"]
 
 [tool.coverage.run]
 omit = [".gitignore", "**/tests/**", "__init__.py", "conftest.py"]
+
 [tool.hatch.build.targets.wheel]
-packages = ["django-colors"]
+packages = ["django_colors"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -30,7 +31,7 @@ addopts = [
   "--cov-config=pyproject.toml",
   "--cov=django_colors",
 ]
-django_find_project = False
+django_find_project = false
 DJANGO_SETTINGS_MODULE = "django_colors.tests.settings"
 
 [tool.ruff]
