@@ -1,6 +1,6 @@
 # This workflow will install Python dependencies, lint and run tests.
 
-name: Python application
+name: Lint & Test 📦
 
 on:
   pull_request:

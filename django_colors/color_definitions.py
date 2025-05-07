@@ -127,27 +127,25 @@ class BootstrapColorChoices(ColorChoices):
     """
 
     BLUE: ColorOption = ColorOption(
-        "blue", "Blue", "bg-primary-200", "text-primary"
+        "blue", "Blue", "bg-primary", "text-primary"
     )
     GREEN: ColorOption = ColorOption(
-        "green", "Green", "bg-success-200", "text-success"
+        "green", "Green", "bg-success", "text-success"
     )
     YELLOW: ColorOption = ColorOption(
-        "yellow", "Yellow", "bg-warning-200", "text-warning"
+        "yellow", "Yellow", "bg-warning", "text-warning"
     )
-    RED: ColorOption = ColorOption(
-        "red", "Red", "bg-danger-200", "text-danger"
-    )
+    RED: ColorOption = ColorOption("red", "Red", "bg-danger", "text-danger")
     PURPLE: ColorOption = ColorOption(
-        "purple", "Purple", "bg-purple-200", "text-purple"
+        "purple", "Purple", "bg-purple", "text-purple"
     )
     INDIGO: ColorOption = ColorOption(
-        "indigo", "Indigo", "bg-indigo-200", "text-indigo"
+        "indigo", "Indigo", "bg-indigo", "text-indigo"
     )
-    PINK: ColorOption = ColorOption("pink", "Pink", "bg-pink-200", "text-pink")
+    PINK: ColorOption = ColorOption("pink", "Pink", "bg-pink", "text-pink")
     ORANGE: ColorOption = ColorOption(
-        "orange", "Orange", "bg-orange-200", "text-orange"
+        "orange", "Orange", "bg-orange", "text-orange"
     )
-    TEAL: ColorOption = ColorOption("teal", "Teal", "bg-teal-200", "text-teal")
-    CYAN: ColorOption = ColorOption("cyan", "Cyan", "bg-cyan-200", "text-cyan")
-    GRAY: ColorOption = ColorOption("gray", "Gray", "bg-gray-200", "text-gray")
+    TEAL: ColorOption = ColorOption("teal", "Teal", "bg-teal", "text-teal")
+    CYAN: ColorOption = ColorOption("cyan", "Cyan", "bg-cyan", "text-cyan")
+    GRAY: ColorOption = ColorOption("gray", "Gray", "bg-gray", "text-gray")
