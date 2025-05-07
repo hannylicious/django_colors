@@ -334,14 +334,14 @@ class TestBootstrapColorChoices:
         blue = bootstrap_color_choice.BLUE
         assert blue.value == "blue"
         assert blue.label == "Blue"
-        assert blue.background_css == "bg-primary-200"
+        assert blue.background_css == "bg-primary"
         assert blue.text_css == "text-primary"
 
         # Check RED option
         red = bootstrap_color_choice.RED
         assert red.value == "red"
         assert red.label == "Red"
-        assert red.background_css == "bg-danger-200"
+        assert red.background_css == "bg-danger"
         assert red.text_css == "text-danger"
 
     def test_get_options_dict_populated(
