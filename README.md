@@ -1,8 +1,6 @@
 # django-colors
 
 [![PyPI version](https://badge.fury.io/py/django-colors.svg)](https://badge.fury.io/py/django-colors)
-[![Build Status](https://travis-ci.org/username/django-colors.svg?branch=master)](https://travis-ci.org/username/django-colors)
-[![Coverage Status](https://coveralls.io/repos/github/username/django-colors/badge.svg?branch=master)](https://coveralls.io/github/username/django-colors?branch=master)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 A Django app providing customizable color selection fields for your models with
@@ -187,13 +185,21 @@ in pyproject.toml
 3. Add documentation for new features
 4. Follow type hinting conventions
 5. Include docstrings with argument and return type information
+6. All contributions must pass pre-commit checks
+7. All new contributions should include relevant tests
+8. Run ruff linting and formatting checks before submitting your PR
 
 ### Development Setup
 
 1. Clone the repository
 2. Create a virtual environment
 3. Install development dependencies: `pip install -e ".[dev]"`
-4. Run tests: `pytest`
+4. Install pre-commit hooks: `pre-commit install`
+5. Run tests: `pytest`
+6. Run linting: `ruff check .`
+7. Run formatting: `ruff format .`
+
+When submitting a PR, ensure all pre-commit hooks pass successfully. The CI pipeline will automatically check these for you, but it's best to verify locally first.
 
 ## License
 
