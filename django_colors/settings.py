@@ -14,6 +14,7 @@ CONFIG_DEFAULTS: dict[str, dict[str, Any]] = {
         "color_type": "BACKGROUND",
         "choice_model": None,
         "choice_queryset": None,
+        "custom_queryset": None,
         "only_use_custom_colors": False,
     }
 }
@@ -142,6 +143,7 @@ class FieldConfig:
             "color_type",
             "choice_model",
             "choice_queryset",
+            "custom_queryset",
             "only_use_custom_colors",
         ]
         return {
@@ -165,6 +167,7 @@ class FieldConfig:
             if (
                 self.config.get("choice_model") is None
                 and self.config.get("choice_queryset") is None
+                and self.config.get("custom_queryset") is None
             ):
                 raise Exception(
                     "Cannot use custom colors without a model or queryset."
