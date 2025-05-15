@@ -24,6 +24,7 @@ class ColorModelField(CharField):
 
     choice_model: Model | None
     choice_queryset: QuerySet | None
+    custom_queryset: QuerySet | None
     color_type: FieldType | None
     default_color_choices: type[ColorChoices] | None
     only_use_custom_colors: bool | None
@@ -53,12 +54,14 @@ class ColorModelField(CharField):
         """
         self.choice_model = model
         self.choice_queryset = queryset
+        self.custom_queryset = queryset
         self.color_type = color_type
         self.default_color_choices = default_color_choices
         self.only_use_custom_colors = only_use_custom_colors
         if (
             not self.choice_model
             and not self.choice_queryset
+            and not self.custom_queryset
             and self.only_use_custom_colors
         ):
             raise Exception(
@@ -106,6 +109,7 @@ class ColorModelField(CharField):
         return super().non_db_attrs + (
             "choice_model",
             "choice_queryset",
+            "custom_queryset",
             "default_color_choices",
             "color_type",
             "only_use_custom_colors",
@@ -124,6 +128,8 @@ class ColorModelField(CharField):
             kwargs["model"] = self.choice_model
         if self.choice_queryset:
             kwargs["queryset"] = self.choice_queryset
+        if self.custom_queryset:
+            kwargs["custom_queryset"] = self.custom_queryset
         if self.only_use_custom_colors:
             kwargs["only_use_custom_colors"] = self.only_use_custom_colors
         return name, path, args, kwargs
@@ -158,7 +164,11 @@ class ColorModelField(CharField):
         query_model_options = []
 
         # get model or queryset options just by name (no label required)
-        if self.choice_queryset is not None:
+        if self.custom_queryset is not None:
+            query_model_options = self.custom_queryset.values_list(
+                color_type.value, "name"
+            )
+        elif self.choice_queryset is not None:
             query_model_options = self.choice_queryset.values_list(
                 color_type.value, "name"
             )
