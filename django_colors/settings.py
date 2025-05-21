@@ -13,7 +13,7 @@ CONFIG_DEFAULTS: dict[str, dict[str, Any]] = {
         "default_color_choices": BootstrapColorChoices,
         "color_type": "BACKGROUND",
         "choice_model": None,
-        "choice_queryset": None,
+        "choice_filters": {},
         "only_use_custom_colors": False,
     }
 }
@@ -141,7 +141,7 @@ class FieldConfig:
             "default_color_choices",
             "color_type",
             "choice_model",
-            "choice_queryset",
+            "choice_filters",
             "only_use_custom_colors",
         ]
         return {
@@ -164,7 +164,7 @@ class FieldConfig:
         if self.config.get("only_use_custom_colors"):
             if (
                 self.config.get("choice_model") is None
-                and self.config.get("choice_queryset") is None
+                and self.config.get("choice_filters") is None
             ):
                 raise Exception(
                     "Cannot use custom colors without a model or queryset."
