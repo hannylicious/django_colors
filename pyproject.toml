@@ -30,6 +30,7 @@ addopts = [
   "--import-mode=importlib",
   "--cov-config=pyproject.toml",
   "--cov=django_colors",
+  "--cov-report=html:coverage_html",
 ]
 django_find_project = false
 DJANGO_SETTINGS_MODULE = "django_colors.tests.settings"
