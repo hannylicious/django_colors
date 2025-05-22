@@ -25,7 +25,7 @@ class TestConfigDefaults:
         assert "default_color_choices" in default_config
         assert "color_type" in default_config
         assert "choice_model" in default_config
-        assert "choice_queryset" in default_config
+        assert "choice_filters" in default_config
         assert "only_use_custom_colors" in default_config
 
     def test_defaults_values(self) -> None:
@@ -39,7 +39,7 @@ class TestConfigDefaults:
         assert default_config["default_color_choices"] == BootstrapColorChoices
         assert default_config["color_type"] == "BACKGROUND"
         assert default_config["choice_model"] is None
-        assert default_config["choice_queryset"] is None
+        assert default_config["choice_filters"] == {}
         assert default_config["only_use_custom_colors"] is False
 
 
@@ -149,7 +149,7 @@ class TestFieldConfig:
         )
         assert field_config.config["color_type"] == FieldType.BACKGROUND
         assert field_config.config["choice_model"] is None
-        assert field_config.config["choice_queryset"] is None
+        assert field_config.config["choice_filters"] == {}
         assert field_config.config["only_use_custom_colors"] is False
 
     @patch("django_colors.settings.get_config")
@@ -444,7 +444,7 @@ class TestFieldConfig:
 
         field_config.config["only_use_custom_colors"] = True
         field_config.config["choice_model"] = None
-        field_config.config["choice_queryset"] = None
+        field_config.config["choice_filters"] = None
 
         with pytest.raises(Exception, match="Cannot use custom colors .*"):
             field_config.set_color_choices()

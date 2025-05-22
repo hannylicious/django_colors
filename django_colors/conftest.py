@@ -1,5 +1,6 @@
 """Pytest setup for color tests."""
 
+from unittest.mock import Mock, MagicMock
 import pytest
 from django.db import models
 
@@ -10,6 +11,33 @@ from django_colors.color_definitions import (
 )
 from django_colors.field_type import FieldType
 from django_colors.models import ColorModel
+from django_colors.settings import FieldConfig
+
+
+class MockModel(models.Model):
+    """Mock model for testing."""
+
+    name = models.CharField(max_length=100)
+    background_css = models.CharField(max_length=100)
+    text_css = models.CharField(max_length=100)
+
+    class Meta:
+        """Meta class for testing."""
+
+        app_label = "test_app"
+
+    def __str__(self) -> str:
+        """Return string representation of the model."""
+        return self.name
+
+
+class ConcreteColorModel(ColorModel):
+    """Concrete implementation of ColorModel for testing."""
+
+    class Meta:
+        """Meta class for testing."""
+
+        app_label = "test_app"
 
 
 @pytest.fixture
@@ -58,40 +86,35 @@ def mock_model_class() -> type:
 
     :return: A Django model class
     """
-
-    class MockModel(models.Model):
-        """Mock model for testing."""
-
-        name = models.CharField(max_length=100)
-        background_css = models.CharField(max_length=100)
-        text_css = models.CharField(max_length=100)
-
-        class Meta:
-            """Meta class for testing."""
-
-            app_label = "test_app"
-
-        def __str__(self) -> str:
-            """Return string representation of the model."""
-            return self.name
-
     return MockModel
 
 
 @pytest.fixture
-def concrete_color_model() -> type:
+def mock_field_config() -> type:
+    """
+    Create a default field configuration for testing.
+
+    :return: A FieldConfig instance
+    """
+    # Create a mock field_config
+    mocked_field_config = Mock()
+
+    # Mock field_config.get method to return test values
+    mocked_field_config.get.side_effect = lambda key: {
+        "default_color_choices": BootstrapColorChoices,
+        "choice_model": None,
+        "choice_filters": {},
+        "color_type": FieldType.BACKGROUND,
+        "only_use_custom_colors": False,
+    }[key]
+    return mocked_field_config
+
+
+@pytest.fixture
+def color_model() -> type:
     """
     Create a concrete implementation of ColorModel for testing.
 
     :return: A concrete ColorModel subclass
     """
-
-    class ConcreteColorModel(ColorModel):
-        """Concrete implementation of ColorModel for testing."""
-
-        class Meta:
-            """Meta class for testing."""
-
-            app_label = "test_app"
-
     return ConcreteColorModel

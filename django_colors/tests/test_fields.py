@@ -1,6 +1,6 @@
 """Tests for the fields module."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 import pytest
 from django.db import models
@@ -25,7 +25,7 @@ class TestColorModelField:
         field = ColorModelField()
 
         assert field.choice_model is None
-        assert field.choice_queryset is None
+        assert field.choice_filters is None
         assert field.color_type is None
         assert field.default_color_choices is None
         assert field.only_use_custom_colors is None
@@ -42,11 +42,9 @@ class TestColorModelField:
         :param mock_model_class: The mock model class fixture
         :return: None
         """
-        queryset_mock = Mock(spec=models.QuerySet)
-
         field = ColorModelField(
             model=mock_model_class,
-            queryset=queryset_mock,
+            model_filters={"name": "test"},
             color_type=FieldType.TEXT,
             default_color_choices=BootstrapColorChoices,
             only_use_custom_colors=True,
@@ -54,13 +52,13 @@ class TestColorModelField:
         )
 
         assert field.choice_model is mock_model_class
-        assert field.choice_queryset is queryset_mock
+        assert field.choice_filters == {"name": "test"}
         assert field.color_type is FieldType.TEXT
         assert field.default_color_choices is BootstrapColorChoices
         assert field.only_use_custom_colors is True
         assert field.max_length == 200
 
-    def test_initialization_with_only_custom_colors_no_model_or_queryset(
+    def test_initialization_with_only_custom_colors_no_model_or_filters(
         self,
     ) -> None:
         """
@@ -69,7 +67,7 @@ class TestColorModelField:
         :return: None
         """
         with pytest.raises(
-            Exception, match="You must have a model or queryset .*"
+            Exception, match="You must have a model or model_filters .*"
         ):
             ColorModelField(only_use_custom_colors=True)
 
@@ -90,22 +88,22 @@ class TestColorModelField:
         assert field.choice_model is mock_model_class
         assert field.only_use_custom_colors is True
 
-    def test_initialization_with_only_custom_colors_with_queryset(
+    def test_initialization_with_only_custom_colors_with_filters(
         self,
     ) -> None:
         """
-        Test initialization with only_use_custom_colors=True and a queryset.
+        Test initialization with only_use_custom_colors=True and a filter.
 
         :return: None
         """
-        queryset_mock = Mock(spec=models.QuerySet)
+        filter = {"name": "test"}
 
         field = ColorModelField(
-            queryset=queryset_mock,
+            model_filters=filter,
             only_use_custom_colors=True,
         )
 
-        assert field.choice_queryset is queryset_mock
+        assert field.choice_filters == filter
         assert field.only_use_custom_colors is True
 
     @patch("django_colors.settings.get_config")
@@ -132,9 +130,7 @@ class TestColorModelField:
 
         assert result == mock_config
         # TODO: Investigate why this is called twice
-        assert (
-            mock_get_config.call_count == 2
-        )  # Verify it was called exactly once
+        assert mock_get_config.call_count == 2
 
     @patch("django_colors.settings.get_config")
     def test_get_config_dict_default(self, mock_get_config: Mock) -> None:
@@ -191,7 +187,7 @@ class TestColorModelField:
         non_db_attrs = field.non_db_attrs
 
         assert "choice_model" in non_db_attrs
-        assert "choice_queryset" in non_db_attrs
+        assert "choice_filters" in non_db_attrs
         assert "default_color_choices" in non_db_attrs
         assert "color_type" in non_db_attrs
         assert "only_use_custom_colors" in non_db_attrs
@@ -203,11 +199,11 @@ class TestColorModelField:
         :param mock_model_class: The mock model class fixture
         :return: None
         """
-        queryset_mock = Mock(spec=models.QuerySet)
+        filters = {"name": "test"}
 
         field = ColorModelField(
             model=mock_model_class,
-            queryset=queryset_mock,
+            model_filters=filters,
             color_type=FieldType.TEXT,
             only_use_custom_colors=True,
         )
@@ -217,7 +213,7 @@ class TestColorModelField:
         assert path.endswith("ColorModelField")
         assert kwargs["color_type"] == FieldType.TEXT
         assert kwargs["model"] == mock_model_class
-        assert kwargs["queryset"] == queryset_mock
+        assert kwargs["model_filters"] == filters
         assert kwargs["only_use_custom_colors"] is True
 
     def test_deconstruct_defaults(self) -> None:
@@ -252,7 +248,9 @@ class TestColorModelField:
         assert isinstance(form_field, ChoiceField)
         assert form_field.widget.__class__ == ColorChoiceWidget
 
-    def test_get_choices_with_mock_field_config(self) -> None:
+    def test_get_choices_with_mock_field_config(
+        self, mock_field_config: pytest.fixture
+    ) -> None:
         """
         Test the get_choices method with a mocked field_config.
 
@@ -261,14 +259,7 @@ class TestColorModelField:
         field = ColorModelField()
 
         # Create a mock field_config
-        field.field_config = Mock()
-
-        # Mock field_config.get method to return test values
-        field.field_config.get.side_effect = lambda key: {
-            "default_color_choices": BootstrapColorChoices,
-            "color_type": FieldType.BACKGROUND,
-            "only_use_custom_colors": False,
-        }[key]
+        field.field_config = mock_field_config
 
         # Should return default choices from BootstrapColorChoices
         choices = field.get_choices()
@@ -280,116 +271,194 @@ class TestColorModelField:
             for choice in choices
         )
 
-    def test_get_choices_with_queryset(self) -> None:
+    def test_get_choices_with_model_filters(
+        self,
+        mock_field_config: pytest.fixture,
+        color_model: pytest.fixture,
+    ) -> None:
         """
-        Test the get_choices method with a queryset.
+        Test the get_choices method with model filters.
 
         :return: None
         """
-        field = ColorModelField()
+        mock_objects = Mock()
 
-        # Create a mock field_config
-        field.field_config = Mock()
+        # Define different return values based on filter arguments
+        def mock_filter(**kwargs):
+            mock_queryset = Mock()
 
-        # Mock field_config.get method to return test values
-        field.field_config.get.side_effect = lambda key: {
-            "default_color_choices": BootstrapColorChoices,
-            "color_type": FieldType.BACKGROUND,
-            "only_use_custom_colors": False,
-        }[key]
+            if kwargs.get("background_css") == "bg-red":
+                # When filtering for bg-red, only return red items
+                mock_queryset.values_list.return_value = [
+                    ("bg-red", "Test Red"),
+                    ("bg-red-dark", "Dark Red"),  # other red variants
+                ]
+            else:
+                # Default case - return all items
+                mock_queryset.values_list.return_value = [
+                    ("bg-red", "Test Red"),
+                    ("bg-blue", "Test Blue"),
+                    ("bg-green", "Test Green"),
+                ]
 
-        # Mock queryset
-        queryset_mock = Mock(spec=models.QuerySet)
-        custom_choices = [
-            ("custom-bg-1", "Custom 1"),
-            ("custom-bg-2", "Custom 2"),
-        ]
-        queryset_mock.values_list.return_value = custom_choices
-        field.choice_queryset = queryset_mock
+            return mock_queryset
 
-        choices = field.get_choices()
+        mock_objects.filter.side_effect = mock_filter
 
-        # Should include default choices + custom choices
-        assert isinstance(choices, list)
-        assert (
-            len(choices) > 2
-        )  # Should have BootstrapColorChoices + 2 custom choices
-        for custom_choice in custom_choices:
-            assert custom_choice in choices
+        # Replace the entire objects manager
+        with patch.object(color_model, "objects", mock_objects):
+            field = ColorModelField()
+            mock_field_config.get.side_effect = lambda key: {
+                "default_color_choices": BootstrapColorChoices,
+                "choice_model": color_model,
+                "choice_filters": {
+                    "background_css": "bg-red"
+                },  # This should filter
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": False,
+            }[key]
 
-    def test_get_choices_with_model(self) -> None:
+            field.field_config = mock_field_config
+            field.choice_model = color_model
+            choices = field.get_choices()
+
+            # Verify the filter was called with the expected arguments
+            mock_objects.filter.assert_called_once_with(
+                background_css="bg-red"
+            )
+
+            # Check that only red items are included from custom choices
+            assert isinstance(choices, list)
+            assert len(choices) > 1
+            # Verify red items are present
+            assert ("bg-red", "Test Red") in choices
+            assert ("bg-red-dark", "Dark Red") in choices
+
+            # Verify blue items are NOT present (filtered out)
+            assert ("bg-blue", "Test Blue") not in choices
+            assert ("bg-green", "Test Green") not in choices
+
+            # Verify default Bootstrap choices are still there
+            bootstrap_choices = [
+                choice
+                for choice in choices
+                if choice[0].startswith("bg-primary")
+            ]
+            assert len(bootstrap_choices) > 0
+
+    def test_get_choices_with_model(
+        self, color_model: pytest.fixture, mock_field_config: pytest.fixture
+    ) -> None:
         """
         Test the get_choices method with a model.
 
         :return: None
         """
-        field = ColorModelField()
+        # Create a mock objects manager
+        mock_objects = MagicMock()
 
-        # Create a mock field_config
-        field.field_config = Mock()
-
-        # Mock field_config.get method to return test values
-        field.field_config.get.side_effect = lambda key: {
-            "default_color_choices": BootstrapColorChoices,
-            "color_type": FieldType.BACKGROUND,
-            "only_use_custom_colors": False,
-        }[key]
-
-        # Mock model
-        model_mock = Mock(spec=models.Model)
-        objects_mock = Mock()
-        all_mock = Mock()
+        # When no filters are applied, return all items via .all()
         custom_choices = [
             ("custom-bg-3", "Custom 3"),
             ("custom-bg-4", "Custom 4"),
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
         ]
-        all_mock.values_list.return_value = custom_choices
-        objects_mock.all.return_value = all_mock
-        model_mock.objects = objects_mock
-        field.choice_model = model_mock
+        mock_objects.filter.return_value.values_list.return_value = (
+            custom_choices
+        )
 
-        choices = field.get_choices()
+        # Replace the entire objects manager
+        with patch.object(color_model, "objects", mock_objects):
+            field = ColorModelField()
+            mock_field_config.get.side_effect = lambda key: {
+                "default_color_choices": BootstrapColorChoices,
+                "choice_model": color_model,
+                "choice_filters": {},  # No filters - should get all
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": False,
+            }[key]
 
-        # Should include default choices + custom choices
-        assert isinstance(choices, list)
-        assert (
-            len(choices) > 2
-        )  # Should have BootstrapColorChoices + 2 custom choices
-        for custom_choice in custom_choices:
-            assert custom_choice in choices
+            field.field_config = mock_field_config
+            field.choice_model = color_model
+            choices = field.get_choices()
 
-    def test_get_choices_with_only_custom_colors(self) -> None:
+            # Verify .filter() was called
+            mock_objects.filter.assert_called_once()
+            mock_objects.filter.return_value.values_list.assert_called_once_with(
+                FieldType.BACKGROUND.value, "name"
+            )
+
+            # Should include default choices + all custom choices
+            assert isinstance(choices, list)
+            assert (
+                len(choices) > 4
+            )  # Should have BootstrapColorChoices + 4 custom choices
+
+            # Verify all custom choices are present
+            for custom_choice in custom_choices:
+                assert custom_choice in choices
+
+            # Verify default Bootstrap choices are still there
+            bootstrap_choices = [
+                choice
+                for choice in choices
+                if choice[0].startswith("bg-primary")
+            ]
+            assert len(bootstrap_choices) > 0
+
+    def test_get_choices_with_only_custom_colors(
+        self, mock_field_config: pytest.fixture, color_model: pytest.fixture
+    ) -> None:
         """
         Test the get_choices method with only_use_custom_colors=True.
 
         :return: None
         """
-        field = ColorModelField()
+        # Create a mock objects manager
+        mock_objects = MagicMock()
 
-        # Create a mock field_config
-        field.field_config = Mock()
-
-        # Mock field_config.get method to return test values
-        field.field_config.get.side_effect = lambda key: {
-            "default_color_choices": BootstrapColorChoices,
-            "color_type": FieldType.BACKGROUND,
-            "only_use_custom_colors": True,
-        }[key]
-
-        # Mock queryset
-        queryset_mock = Mock(spec=models.QuerySet)
+        # When no filters are applied, return all items via .all()
         custom_choices = [
-            ("custom-bg-1", "Custom 1"),
-            ("custom-bg-2", "Custom 2"),
+            ("custom-bg-3", "Custom 3"),
+            ("custom-bg-4", "Custom 4"),
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
         ]
-        queryset_mock.values_list.return_value = custom_choices
-        field.choice_queryset = queryset_mock
+        mock_objects.filter.return_value.values_list.return_value = (
+            custom_choices
+        )
 
-        choices = field.get_choices()
+        # Replace the entire objects manager
+        with patch.object(color_model, "objects", mock_objects):
+            field = ColorModelField()
+            mock_field_config.get.side_effect = lambda key: {
+                "default_color_choices": BootstrapColorChoices,
+                "choice_model": color_model,
+                "choice_filters": {},  # No filters - should get all
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": True,
+            }[key]
 
-        # Should only include custom choices, not default choices
-        assert choices == custom_choices
-        assert len(choices) == 2
+            field.field_config = mock_field_config
+            field.choice_model = color_model
+            choices = field.get_choices()
+
+            # Verify .filter() was called
+            mock_objects.filter.assert_called_once()
+            mock_objects.filter.return_value.values_list.assert_called_once_with(
+                FieldType.BACKGROUND.value, "name"
+            )
+
+            # Should have only custom choices
+            assert isinstance(choices, list)
+            assert (
+                len(choices) == 4
+            )  # Should have BootstrapColorChoices + 4 custom choices
+
+            # Verify all custom choices are present
+            for custom_choice in custom_choices:
+                assert custom_choice in choices
 
     def test_inheritance(self) -> None:
         """
@@ -404,26 +473,48 @@ class TestColorModelField:
 class TestColorModelFieldIntegration:
     """Integration tests for the ColorModelField class."""
 
+    class IntegrationTestModel(models.Model):
+        """Test model with ColorModelField."""
+
+        name = models.CharField(max_length=100)
+        color = ColorModelField()
+
+        class Meta:
+            """Meta class for testing."""
+
+            app_label = "test_app"
+
+        def __str__(self) -> str:
+            """Return string representation of the model."""
+            return self.name
+
+    class CustomSettingsIntegrationTestModel(models.Model):
+        """Test model with customized ColorModelField."""
+
+        name = models.CharField(max_length=100)
+        color = ColorModelField(
+            color_type=FieldType.TEXT,
+            default_color_choices=BootstrapColorChoices,
+            max_length=200,
+        )
+
+        class Meta:
+            """Meta class for testing."""
+
+            app_label = "test_app"
+
+        def __str__(self) -> str:
+            """Return string representation of the model."""
+            return self.name
+
     def test_field_in_model(self) -> None:
         """
         Test using ColorModelField in a model.
 
         :return: None
         """
-
-        # Define a test model with ColorModelField
-        class TestModel(models.Model):
-            name = models.CharField(max_length=100)
-            color = ColorModelField()
-
-            class Meta:
-                app_label = "test_app"
-
-            def __str__(self) -> str:
-                return self.name
-
         # Get the field from the model
-        color_field = TestModel._meta.get_field("color")
+        color_field = self.IntegrationTestModel._meta.get_field("color")
 
         # Check that it's a ColorModelField
         assert isinstance(color_field, ColorModelField)
@@ -435,24 +526,10 @@ class TestColorModelFieldIntegration:
 
         :return: None
         """
-
-        # Define a test model with customized ColorModelField
-        class TestModel(models.Model):
-            name = models.CharField(max_length=100)
-            color = ColorModelField(
-                color_type=FieldType.TEXT,
-                default_color_choices=BootstrapColorChoices,
-                max_length=200,
-            )
-
-            class Meta:
-                app_label = "test_app"
-
-            def __str__(self) -> str:
-                return self.name
-
         # Get the field from the model
-        color_field = TestModel._meta.get_field("color")
+        color_field = self.CustomSettingsIntegrationTestModel._meta.get_field(
+            "color"
+        )
 
         # Check that it's a ColorModelField with the right settings
         assert isinstance(color_field, ColorModelField)

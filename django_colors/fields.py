@@ -60,9 +60,10 @@ class ColorModelField(CharField):
             and not self.choice_filters
             and self.only_use_custom_colors
         ):
-            raise Exception(
-                _("You must have a model or queryset to use custom colors.")
+            err_msg = _(
+                "You must have a model or model_filters to use custom colors."
             )
+            raise Exception(err_msg)
         self.model_name = None
         self.app_name = None
         kwargs.setdefault("max_length", 150)
@@ -158,6 +159,9 @@ class ColorModelField(CharField):
 
         # default choices
         choices = list(default_color_choices(color_type).choices)
+
+        if not self.field_config.get("choice_model"):
+            return choices
 
         # get the filters (most narrow scope to least narrow scope)
         filters = additional_filters or self.field_config.get("choice_filters")
