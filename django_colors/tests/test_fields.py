@@ -271,6 +271,79 @@ class TestColorModelField:
             for choice in choices
         )
 
+    def test_get_choices_with_model_priority(
+        self,
+        mock_field_config: pytest.fixture,
+        color_model: pytest.fixture,
+    ) -> None:
+        """
+        Test the get_choices method with model filters.
+
+        :return: None
+        """
+        mock_objects = Mock()
+
+        # Define different return values based on filter arguments
+        def mock_filter(**kwargs):
+            mock_queryset = Mock()
+
+            if kwargs.get("background_css") == "bg-red":
+                # When filtering for bg-red, only return red items
+                mock_queryset.values_list.return_value = [
+                    ("bg-red", "Test Red"),
+                    ("bg-red-dark", "Dark Red"),  # other red variants
+                ]
+            else:
+                # Default case - return all items
+                mock_queryset.values_list.return_value = [
+                    ("bg-red", "Test Red"),
+                    ("bg-blue", "Test Blue"),
+                    ("bg-green", "Test Green"),
+                ]
+
+            return mock_queryset
+
+        mock_objects.filter.side_effect = mock_filter
+
+        # Replace the entire objects manager
+        with patch.object(color_model, "objects", mock_objects):
+            field = ColorModelField()
+            mock_field_config.get.side_effect = lambda key: {
+                "default_color_choices": BootstrapColorChoices,
+                "choice_model": color_model,
+                "choice_filters": {
+                    "background_css": "bg-blue"
+                },  # This should filter
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": False,
+            }[key]
+
+            field.field_config = mock_field_config
+            field.choice_model = color_model
+            # We set the model_priority to True to show all model responses
+            choices = field.get_choices(model_priority=True)
+
+            # Verify the filter was called with the expected arguments
+            mock_objects.filter.assert_called_once()
+
+            # Check that only red items are included from custom choices
+            assert isinstance(choices, list)
+            assert len(choices) > 1
+            # Verify red items are present
+            assert ("bg-red", "Test Red") in choices
+
+            # Verify blue items are NOT present (filtered out)
+            assert ("bg-blue", "Test Blue") in choices
+            assert ("bg-green", "Test Green") in choices
+
+            # Verify default Bootstrap choices are still there
+            bootstrap_choices = [
+                choice
+                for choice in choices
+                if choice[0].startswith("bg-primary")
+            ]
+            assert len(bootstrap_choices) > 0
+
     def test_get_choices_with_model_filters(
         self,
         mock_field_config: pytest.fixture,
