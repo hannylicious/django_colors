@@ -94,14 +94,13 @@ class MyModel(models.Model):
 You can configure the app globally in your settings.py:
 
 ```python
-from django_colors.color_definitions import BootstrapColorChoices
 COLORS_APP_CONFIG = {
     'default': {
         'default_color_choices': 'django_colors.color_definitions.BootstrapColorChoices',
         'color_type': 'BACKGROUND',
     },
     'my_app': {
-        'default_color_choices': 'myapp.colors.MyCustomColorChoices',
+        'default_color_choices': 'myapp.MyCustomColorChoices',
         'color_type': 'TEXT',
     },
     'my_app.MyModel.color_field': {
@@ -109,6 +108,24 @@ COLORS_APP_CONFIG = {
         'only_use_custom_colors': True,
     },
 }
+# You can also import your custom color choices directly
+
+from django_colors.color_definitions import BootstrapColorChoices
+COLORS_APP_CONFIG = {
+    'default': {
+        'default_color_choices': BootstrapColorChoices,
+        'color_type': 'BACKGROUND',
+    },
+    'my_app': {
+        'default_color_choices': 'myapp.MyCustomColorChoices',
+        'color_type': 'TEXT',
+    },
+    'my_app.MyModel.color_field': {
+        'model': 'my_app.MyCustomColor',
+        'only_use_custom_colors': True,
+    },
+}
+
 ```
 
 - *note:* When using `only_use_custom_colors`, you must set a model, as it will
