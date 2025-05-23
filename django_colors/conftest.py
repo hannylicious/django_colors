@@ -1,6 +1,7 @@
 """Pytest setup for color tests."""
 
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
+
 import pytest
 from django.db import models
 
@@ -11,7 +12,6 @@ from django_colors.color_definitions import (
 )
 from django_colors.field_type import FieldType
 from django_colors.models import ColorModel
-from django_colors.settings import FieldConfig
 
 
 class MockModel(models.Model):

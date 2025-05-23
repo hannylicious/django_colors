@@ -1,6 +1,6 @@
 """Tests for the fields module."""
 
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from django.db import models
@@ -284,7 +284,7 @@ class TestColorModelField:
         mock_objects = Mock()
 
         # Define different return values based on filter arguments
-        def mock_filter(**kwargs):
+        def mock_filter(**kwargs: dict) -> Mock:
             mock_queryset = Mock()
 
             if kwargs.get("background_css") == "bg-red":
@@ -326,13 +326,10 @@ class TestColorModelField:
             # Verify the filter was called with the expected arguments
             mock_objects.filter.assert_called_once()
 
-            # Check that only red items are included from custom choices
+            # Check that all items are included from custom choices
             assert isinstance(choices, list)
             assert len(choices) > 1
-            # Verify red items are present
             assert ("bg-red", "Test Red") in choices
-
-            # Verify blue items are NOT present (filtered out)
             assert ("bg-blue", "Test Blue") in choices
             assert ("bg-green", "Test Green") in choices
 
@@ -357,7 +354,7 @@ class TestColorModelField:
         mock_objects = Mock()
 
         # Define different return values based on filter arguments
-        def mock_filter(**kwargs):
+        def mock_filter(**kwargs: dict) -> Mock:
             mock_queryset = Mock()
 
             if kwargs.get("background_css") == "bg-red":
