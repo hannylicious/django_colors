@@ -1,6 +1,6 @@
 """Tests for the fields module."""
 
-from unittest.mock import MagicMock, Mock, patch, PropertyMock
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
 from django.db import models
@@ -679,9 +679,7 @@ class TestColorModelFieldIntegration:
     def test_field_string_model_integration_with_mocked_resolution(
         self,
     ) -> None:
-        """
-        Test string model resolution in a more controlled way.
-        """
+        """Test string model resolution in a more controlled way."""
         with patch("django.apps.apps.get_model") as mock_get_model:
             # Mock the model resolution
             mock_model = Mock()
