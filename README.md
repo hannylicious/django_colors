@@ -94,6 +94,7 @@ class MyModel(models.Model):
 You can configure the app globally in your settings.py:
 
 ```python
+from django_colors.color_definitions import BootstrapColorChoices
 COLORS_APP_CONFIG = {
     'default': {
         'default_color_choices': 'django_colors.color_definitions.BootstrapColorChoices',

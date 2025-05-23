@@ -18,10 +18,10 @@ class ColorModelField(CharField):
     Custom field for selecting colors.
 
     Provide a choice field with color options, supporting both
-
+    default color choices and custom colors from a model.
     """
 
-    choice_model: Model | None
+    choice_model: Model | str | None  # Now accepts string references
     choice_filters: dict | None
     color_type: FieldType | None
     default_color_choices: type[ColorChoices] | None
@@ -30,7 +30,7 @@ class ColorModelField(CharField):
 
     def __init__(
         self,
-        model: Model | None = None,
+        model: Model | str | None = None,  # Now accepts string references
         model_filters: dict | None = None,
         color_type: FieldType | None = None,
         default_color_choices: type[ColorChoices] | None = None,
@@ -41,7 +41,7 @@ class ColorModelField(CharField):
         """
         Initialize the ColorModelField.
 
-        :argument model: Optional model class for custom colors
+        :argument model: Optional model class or string reference for custom colors
         :argument model_filters: Optional queryset for custom colors
         :argument color_type: Optional field type (BACKGROUND or TEXT)
         :argument default_color_choices: Optional default color choices class
@@ -55,6 +55,10 @@ class ColorModelField(CharField):
         self.color_type = color_type
         self.default_color_choices = default_color_choices
         self.only_use_custom_colors = only_use_custom_colors
+
+        # Note: We can't validate the model reference here if it's a string
+        # because apps might not be loaded yet. The validation will happen
+        # in the FieldConfig when the model is actually resolved.
         if (
             not self.choice_model
             and not self.choice_filters
@@ -64,6 +68,7 @@ class ColorModelField(CharField):
                 "You must have a model or model_filters to use custom colors."
             )
             raise Exception(err_msg)
+
         self.model_name = None
         self.app_name = None
         kwargs.setdefault("max_length", 150)
@@ -154,13 +159,16 @@ class ColorModelField(CharField):
 
         :returns: List of (value, label) tuples for use in choice fields
         """
-        default_color_choices = self.field_config.get("default_color_choices")
+        # Use the resolved default_color_choices from field_config
+        default_color_choices = self.field_config.default_color_choices
         color_type = self.field_config.get("color_type")
 
         # default choices
         choices = list(default_color_choices(color_type).choices)
 
-        if not self.field_config.get("choice_model"):
+        # Use the resolved choice_model from field_config instead of self.choice_model
+        resolved_choice_model = self.field_config.choice_model
+        if not resolved_choice_model:
             return choices
 
         # get the filters (most narrow scope to least narrow scope)
@@ -170,9 +178,9 @@ class ColorModelField(CharField):
         if model_priority:
             filters = {}
 
-        # get the queryset options
+        # get the queryset options using the resolved model
         query_model_options = []
-        query_model_options = self.choice_model.objects.filter(
+        query_model_options = resolved_choice_model.objects.filter(
             **filters
         ).values_list(color_type.value, "name")
 
