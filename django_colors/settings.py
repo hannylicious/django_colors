@@ -2,8 +2,10 @@
 
 from typing import Any
 
+from django.apps import apps
 from django.conf import settings
 from django.db.models import Field, Model
+from django.utils.functional import cached_property
 
 from django_colors.color_definitions import BootstrapColorChoices, ColorChoices
 from django_colors.field_type import FieldType
@@ -13,7 +15,7 @@ CONFIG_DEFAULTS: dict[str, dict[str, Any]] = {
         "default_color_choices": BootstrapColorChoices,
         "color_type": "BACKGROUND",
         "choice_model": None,
-        "choice_queryset": None,
+        "choice_filters": {},
         "only_use_custom_colors": False,
     }
 }
@@ -80,6 +82,63 @@ class FieldConfig:
         # Set the color_type to the FieldType
         self.cast_color_type()
 
+    @cached_property
+    def choice_model(self) -> type[Model] | None:
+        """
+        Lazily resolve the choice_model string to model class.
+
+        :returns: The resolved model class or None
+        """
+        choice_model = self.config.get("choice_model")
+        if choice_model and isinstance(choice_model, str):
+            try:
+                app_label, model_name = choice_model.split(".")
+                return apps.get_model(app_label, model_name)
+            except (ValueError, LookupError) as e:
+                raise ValueError(
+                    f"Invalid model reference '{choice_model}'. "
+                    f"Expected format: 'app_label.ModelName'"
+                ) from e
+        return choice_model
+
+    @cached_property
+    def default_color_choices(self) -> type:
+        """
+        Lazily resolve the default_color_choices string to class.
+
+        :returns: The resolved color choices class
+        """
+        default_color_choices = self.config.get("default_color_choices")
+        if default_color_choices and isinstance(default_color_choices, str):
+            try:
+                return self._import_from_string(default_color_choices)
+            except (ImportError, AttributeError) as e:
+                raise ValueError(
+                    f"Invalid colors reference '{default_color_choices}'. "
+                    f"Expected format: 'module.path.ClassName'"
+                ) from e
+        return default_color_choices
+
+    def _import_from_string(self, import_string: str) -> type:
+        """
+        Import a class from a string path.
+
+        :argument import_string: String like 'module.path.ClassName'
+        :returns: The imported class
+        """
+        module_path, class_name = import_string.rsplit(".", 1)
+        module = __import__(module_path, fromlist=[class_name])
+        return getattr(module, class_name)
+
+    def has_choice_model(self) -> bool:
+        """
+        Check if a choice model is configured without triggering resolution.
+
+        :returns: True if a choice model is configured, False otherwise
+        """
+        choice_model = self.config.get("choice_model")
+        return choice_model is not None
+
     def get(self, value: str) -> str | KeyError:
         """
         Get the value from config.
@@ -141,7 +200,7 @@ class FieldConfig:
             "default_color_choices",
             "color_type",
             "choice_model",
-            "choice_queryset",
+            "choice_filters",
             "only_use_custom_colors",
         ]
         return {
@@ -162,9 +221,10 @@ class FieldConfig:
             queryset is provided
         """
         if self.config.get("only_use_custom_colors"):
+            # Check if we have a model or filters without triggering resolution
             if (
-                self.config.get("choice_model") is None
-                and self.config.get("choice_queryset") is None
+                not self.has_choice_model()
+                and self.config.get("choice_filters") is None
             ):
                 raise Exception(
                     "Cannot use custom colors without a model or queryset."

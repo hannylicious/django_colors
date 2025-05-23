@@ -25,7 +25,7 @@ class TestConfigDefaults:
         assert "default_color_choices" in default_config
         assert "color_type" in default_config
         assert "choice_model" in default_config
-        assert "choice_queryset" in default_config
+        assert "choice_filters" in default_config
         assert "only_use_custom_colors" in default_config
 
     def test_defaults_values(self) -> None:
@@ -39,7 +39,7 @@ class TestConfigDefaults:
         assert default_config["default_color_choices"] == BootstrapColorChoices
         assert default_config["color_type"] == "BACKGROUND"
         assert default_config["choice_model"] is None
-        assert default_config["choice_queryset"] is None
+        assert default_config["choice_filters"] == {}
         assert default_config["only_use_custom_colors"] is False
 
 
@@ -149,7 +149,7 @@ class TestFieldConfig:
         )
         assert field_config.config["color_type"] == FieldType.BACKGROUND
         assert field_config.config["choice_model"] is None
-        assert field_config.config["choice_queryset"] is None
+        assert field_config.config["choice_filters"] == {}
         assert field_config.config["only_use_custom_colors"] is False
 
     @patch("django_colors.settings.get_config")
@@ -444,7 +444,7 @@ class TestFieldConfig:
 
         field_config.config["only_use_custom_colors"] = True
         field_config.config["choice_model"] = None
-        field_config.config["choice_queryset"] = None
+        field_config.config["choice_filters"] = None
 
         with pytest.raises(Exception, match="Cannot use custom colors .*"):
             field_config.set_color_choices()
@@ -561,3 +561,255 @@ class TestFieldConfig:
 
         # Should keep the enum value as is
         assert field_config.config["color_type"] == FieldType.BACKGROUND
+
+
+class TestFieldConfigStringResolution:
+    """Test string resolution functionality in FieldConfig."""
+
+    @patch("django.apps.apps.get_model")
+    def test_lazy_model_resolution_from_string(
+        self, mock_get_model: pytest.fixture
+    ) -> None:
+        """Test that string model references are lazily resolved."""
+        # Create a real FieldConfig instance (not mocked)
+        # but mock the Django model resolution
+        mock_model = Mock()
+        mock_get_model.return_value = mock_model
+
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with string model reference
+        mock_field = Mock()
+        mock_field.choice_model = "testapp.TestModel"
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = None
+        mock_field.only_use_custom_colors = None
+
+        # Create field config with string model reference
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        # Access the choice_model property - should trigger resolution
+        resolved_model = config_instance.choice_model
+
+        # Verify model was resolved correctly
+        mock_get_model.assert_called_once_with("testapp", "TestModel")
+        assert resolved_model is mock_model
+
+        # Access again - should use cached value
+        resolved_model_2 = config_instance.choice_model
+        assert resolved_model_2 is mock_model
+        # get_model should still only be called once due to caching
+        assert mock_get_model.call_count == 1
+
+    def test_invalid_string_model_reference(self) -> None:
+        """Test handling of invalid string model references."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with invalid string model reference
+        mock_field = Mock()
+        mock_field.choice_model = "invalid_format"  # Missing dot separator
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = None
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        with pytest.raises(ValueError, match="Invalid model reference"):
+            _ = config_instance.choice_model
+
+    @patch("django.apps.apps.get_model")
+    def test_has_choice_model_method(
+        self, mock_get_model: pytest.fixture
+    ) -> None:
+        """Test the has_choice_model method doesn't trigger resolution."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with string model reference
+        mock_field = Mock()
+        mock_field.choice_model = "testapp.TestModel"
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = None
+        mock_field.only_use_custom_colors = None
+
+        # Test with string model reference
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        # has_choice_model should return True without calling get_model
+        assert config_instance.has_choice_model() is True
+        mock_get_model.assert_not_called()
+
+        # Test with None
+        config_instance.config["choice_model"] = None
+        assert config_instance.has_choice_model() is False
+        mock_get_model.assert_not_called()
+
+        # Test with actual model class
+        mock_model = Mock()
+        config_instance.config["choice_model"] = mock_model
+        assert config_instance.has_choice_model() is True
+        mock_get_model.assert_not_called()
+
+    @patch("django.apps.apps.get_model")
+    def test_model_not_found_error(
+        self, mock_get_model: pytest.fixture
+    ) -> None:
+        """Test handling when string model reference can't be resolved."""
+        # Make get_model raise LookupError (built-in Python exception)
+        mock_get_model.side_effect = LookupError("Model not found")
+
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with non-existent model reference
+        mock_field = Mock()
+        mock_field.choice_model = "testapp.NonExistentModel"
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = None
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        with pytest.raises(ValueError, match="Invalid model reference"):
+            _ = config_instance.choice_model
+
+    def test_choice_model_with_actual_model_class(self) -> None:
+        """Test choice_model property when config contains a model class."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create a mock model that will be stored in config
+        mock_choice_model = Mock()
+
+        # Create mock field with actual model class (not string)
+        mock_field = Mock()
+        mock_field.choice_model = mock_choice_model  # Already a model class
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = None
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        # This should return the model class directly without resolution
+        result = config_instance.choice_model
+        assert result is mock_choice_model
+
+    def test_choice_model_with_none_value(self) -> None:
+        """Test choice_model property when config contains None."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with None choice_model
+        mock_field = Mock()
+        mock_field.choice_model = None
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = None
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        # This should return None directly
+        result = config_instance.choice_model
+        assert result is None
+
+    def test_default_color_choices_string_resolution(self) -> None:
+        """Test default_color_choices property resolves string imports."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with string reference to color choices
+        mock_field = Mock()
+        mock_field.choice_model = None
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = (
+            "django_colors.color_definitions.BootstrapColorChoices"
+        )
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        # This should resolve the string to the actual class
+        result = config_instance.default_color_choices
+        assert result is BootstrapColorChoices
+
+    def test_default_color_choices_with_class_object(self) -> None:
+        """Test default_color_choices property when config contains a class."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with actual class (not string)
+        mock_field = Mock()
+        mock_field.choice_model = None
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = BootstrapColorChoices
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        # This should return the class directly
+        result = config_instance.default_color_choices
+        assert result is BootstrapColorChoices
+
+    def test_invalid_default_color_choices_string(self) -> None:
+        """Test handling of invalid default_color_choices string references."""
+        # Create a mock model class to pass to FieldConfig init
+        mock_model_class = Mock()
+        mock_model_class._meta.app_label = "testapp"
+        mock_model_class.__class__.__name__ = "TestModel"
+
+        # Create mock field with invalid string reference
+        mock_field = Mock()
+        mock_field.choice_model = None
+        mock_field.choice_filters = None
+        mock_field.color_type = None
+        mock_field.default_color_choices = "nonexistent.module.ClassName"
+        mock_field.only_use_custom_colors = None
+
+        config_instance = FieldConfig(
+            mock_model_class, mock_field, "test_field"
+        )
+
+        with pytest.raises(ValueError, match="Invalid colors reference"):
+            _ = config_instance.default_color_choices

@@ -4,7 +4,8 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 A Django app providing customizable color selection fields for your models with
-Bootstrap color integration.
+Bootstrap color integration. Can be used with or without Bootstrap and can be
+easily extended to support any CSS framework or custom color palette.
 
 ## Overview
 
@@ -15,6 +16,7 @@ capabilities to your Django models. It provides:
 - Pre-defined Bootstrap color choices
 - Support for both background and text color CSS classes
 - Ability to define your own color palettes
+- Ability to define color palettes from any CSS framework
 - Custom widget for color selection in forms
 
 The app is designed to be flexible, allowing you to use either the built-in
@@ -98,14 +100,36 @@ COLORS_APP_CONFIG = {
         'color_type': 'BACKGROUND',
     },
     'my_app': {
-        'default_color_choices': 'myapp.colors.MyCustomColorChoices',
+        'default_color_choices': 'myapp.MyCustomColorChoices',
         'color_type': 'TEXT',
     },
     'my_app.MyModel.color_field': {
+        'model': 'my_app.MyCustomColor',
         'only_use_custom_colors': True,
     },
 }
+# You can also import your custom color choices directly
+
+from django_colors.color_definitions import BootstrapColorChoices
+COLORS_APP_CONFIG = {
+    'default': {
+        'default_color_choices': BootstrapColorChoices,
+        'color_type': 'BACKGROUND',
+    },
+    'my_app': {
+        'default_color_choices': 'myapp.MyCustomColorChoices',
+        'color_type': 'TEXT',
+    },
+    'my_app.MyModel.color_field': {
+        'model': 'my_app.MyCustomColor',
+        'only_use_custom_colors': True,
+    },
+}
+
 ```
+
+- *note:* When using `only_use_custom_colors`, you must set a model, as it will
+  not use the default color choices.
 
 ## Templates
 
@@ -140,10 +164,10 @@ Base class for defining a collection of color options with methods to:
 
 Pre-defined color choices based on Bootstrap's color system, including:
 
-- Primary colors (blue)
-- Success (green)
-- Warning (yellow)
-- Danger (red)
+- Primary colors (blue: bg-primary, text-primary)
+- Success (green: bg-success, text-success)
+- Warning (yellow: bg-warning, text-warning)
+- Danger (red: bg-danger, text-danger)
 - Various other colors (purple, indigo, pink, etc.)
 
 ### FieldType
@@ -160,6 +184,10 @@ A custom Django field for selecting colors, with options for:
 - Using predefined or custom colors
 - Specifying field type (background or text)
 - Using a custom model or queryset for color options
+- get_choices() can pass `additional_filters` to make the field do additional
+ filtering on the model (and any existing filters applied to it)
+- get_choices(): can pass `model_priority` to make the field return all
+ model objects instead of any queryset filtered objects.
 
 ### ColorModel
 
@@ -172,6 +200,119 @@ Abstract base model for custom color definitions with fields for:
 ### ColorChoiceWidget
 
 Custom form widget for color selection.
+
+### Forms
+
+The `ColorModelField` class will render as a Select field in forms.
+
+#### Model form example
+
+```python
+# models.py
+class TestAppColor(ColorModel):
+    active = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+
+class TestThing(models.Model):
+    identity = models.CharField(max_length=100)
+    background_color = ColorModelField(
+        model=TestAppColor,
+        # Show only active colors along with default colors
+        model_filters={"active": True},
+        only_use_custom_colors=False,
+        null=True,
+        blank=True,
+    )
+    # show only default colors
+    text_color = ColorModelField()
+
+# forms.py
+class TestThingForm(forms.ModelForm):
+    class Meta:
+        model = TestThing
+        fields = ["background_color"]
+
+```
+
+#### Standard form example
+
+```python
+# models.py
+class TestAppColor(ColorModel):
+    active = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+
+class TestThing(models.Model):
+    identity = models.CharField(max_length=100)
+    background_color = ColorModelField(
+        model=TestAppColor,
+        # Show only active colors along with default colors
+        model_filters={"active": True},
+        only_use_custom_colors=False,
+        null=True,
+        blank=True,
+    )
+    # show only default colors
+    text_color = ColorModelField()
+
+# forms.py
+class StandardForm(forms.Form):
+    color = forms.ChoiceField(
+        required=False,
+        choices=TestThing._meta.get_field("background_color").get_choices,
+        widget=ColorChoiceWidget(
+            attrs={"class": "form-control", "hx-target": "#something"}
+        ),
+    )
+```
+
+#### Advanced form example
+
+- This showcases how to use the `get_choices` method to override the presets in
+ the form.
+
+```python
+# models.py
+class TestAppColor(ColorModel):
+    active = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+
+class TestThing(models.Model):
+    identity = models.CharField(max_length=100)
+    background_color = ColorModelField(
+        model=TestAppColor,
+        # Show only active colors along with default colors
+        model_filters={"active": True},
+        only_use_custom_colors=False,
+        null=True,
+        blank=True,
+    )
+    # show only default colors
+    text_color = ColorModelField()
+
+# forms.py
+class AdvancedForm(forms.Form):
+    # Need to see ALL options including inactive colors
+    color = forms.ChoiceField(
+        required=False,
+        choices=partial(
+            TestThing._meta.get_field("background_color").get_choices,
+            model_priority=True,
+        ),
+        widget=ColorChoiceWidget(
+            attrs={"class": "form-control", "hx-target": "#something"}
+        ),
+    )
+```
 
 ## Contributing
 
