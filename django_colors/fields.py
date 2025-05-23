@@ -41,7 +41,7 @@ class ColorModelField(CharField):
         """
         Initialize the ColorModelField.
 
-        :argument model: Optional model class or string reference for custom colors
+        :argument model: Optional model class or string reference for colors
         :argument model_filters: Optional queryset for custom colors
         :argument color_type: Optional field type (BACKGROUND or TEXT)
         :argument default_color_choices: Optional default color choices class
@@ -166,7 +166,7 @@ class ColorModelField(CharField):
         # default choices
         choices = list(default_color_choices(color_type).choices)
 
-        # Use the resolved choice_model from field_config instead of self.choice_model
+        # Use the resolved choice_model
         resolved_choice_model = self.field_config.choice_model
         if not resolved_choice_model:
             return choices

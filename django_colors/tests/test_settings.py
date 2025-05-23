@@ -567,7 +567,9 @@ class TestFieldConfigStringResolution:
     """Test string resolution functionality in FieldConfig."""
 
     @patch("django.apps.apps.get_model")
-    def test_lazy_model_resolution_from_string(self, mock_get_model):
+    def test_lazy_model_resolution_from_string(
+        self, mock_get_model: pytest.fixture
+    ) -> None:
         """Test that string model references are lazily resolved."""
         # Create a real FieldConfig instance (not mocked)
         # but mock the Django model resolution
@@ -605,7 +607,7 @@ class TestFieldConfigStringResolution:
         # get_model should still only be called once due to caching
         assert mock_get_model.call_count == 1
 
-    def test_invalid_string_model_reference(self):
+    def test_invalid_string_model_reference(self) -> None:
         """Test handling of invalid string model references."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
@@ -628,7 +630,9 @@ class TestFieldConfigStringResolution:
             _ = config_instance.choice_model
 
     @patch("django.apps.apps.get_model")
-    def test_has_choice_model_method(self, mock_get_model):
+    def test_has_choice_model_method(
+        self, mock_get_model: pytest.fixture
+    ) -> None:
         """Test the has_choice_model method doesn't trigger resolution."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
@@ -664,7 +668,9 @@ class TestFieldConfigStringResolution:
         mock_get_model.assert_not_called()
 
     @patch("django.apps.apps.get_model")
-    def test_model_not_found_error(self, mock_get_model):
+    def test_model_not_found_error(
+        self, mock_get_model: pytest.fixture
+    ) -> None:
         """Test handling when string model reference can't be resolved."""
         # Make get_model raise LookupError (built-in Python exception)
         mock_get_model.side_effect = LookupError("Model not found")
@@ -689,8 +695,8 @@ class TestFieldConfigStringResolution:
         with pytest.raises(ValueError, match="Invalid model reference"):
             _ = config_instance.choice_model
 
-    def test_choice_model_with_actual_model_class(self):
-        """Test choice_model property when config already contains a model class."""
+    def test_choice_model_with_actual_model_class(self) -> None:
+        """Test choice_model property when config contains a model class."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
         mock_model_class._meta.app_label = "testapp"
@@ -715,7 +721,7 @@ class TestFieldConfigStringResolution:
         result = config_instance.choice_model
         assert result is mock_choice_model
 
-    def test_choice_model_with_none_value(self):
+    def test_choice_model_with_none_value(self) -> None:
         """Test choice_model property when config contains None."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
@@ -738,7 +744,7 @@ class TestFieldConfigStringResolution:
         result = config_instance.choice_model
         assert result is None
 
-    def test_default_color_choices_string_resolution(self):
+    def test_default_color_choices_string_resolution(self) -> None:
         """Test default_color_choices property resolves string imports."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
@@ -763,8 +769,8 @@ class TestFieldConfigStringResolution:
         result = config_instance.default_color_choices
         assert result is BootstrapColorChoices
 
-    def test_default_color_choices_with_class_object(self):
-        """Test default_color_choices property when config already contains a class."""
+    def test_default_color_choices_with_class_object(self) -> None:
+        """Test default_color_choices property when config contains a class."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
         mock_model_class._meta.app_label = "testapp"
@@ -786,7 +792,7 @@ class TestFieldConfigStringResolution:
         result = config_instance.default_color_choices
         assert result is BootstrapColorChoices
 
-    def test_invalid_default_color_choices_string(self):
+    def test_invalid_default_color_choices_string(self) -> None:
         """Test handling of invalid default_color_choices string references."""
         # Create a mock model class to pass to FieldConfig init
         mock_model_class = Mock()
@@ -805,7 +811,5 @@ class TestFieldConfigStringResolution:
             mock_model_class, mock_field, "test_field"
         )
 
-        with pytest.raises(
-            ValueError, match="Invalid color choices reference"
-        ):
+        with pytest.raises(ValueError, match="Invalid colors reference"):
             _ = config_instance.default_color_choices

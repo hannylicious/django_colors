@@ -114,12 +114,12 @@ class FieldConfig:
                 return self._import_from_string(default_color_choices)
             except (ImportError, AttributeError) as e:
                 raise ValueError(
-                    f"Invalid color choices reference '{default_color_choices}'. "
+                    f"Invalid colors reference '{default_color_choices}'. "
                     f"Expected format: 'module.path.ClassName'"
                 ) from e
         return default_color_choices
 
-    def _import_from_string(self, import_string: str):
+    def _import_from_string(self, import_string: str) -> type:
         """
         Import a class from a string path.
 
