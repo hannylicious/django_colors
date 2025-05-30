@@ -5,7 +5,7 @@ requires = ["hatchling"]
 
 [project]
 name = "django-colors"
-version = "1.1.0"
+version = "1.2.0"
 description = "An application to assist with css framework color selections."
 readme = "README.md"
 requires-python = ">=3.12"
