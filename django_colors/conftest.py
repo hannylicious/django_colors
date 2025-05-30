@@ -1,6 +1,6 @@
 """Pytest setup for color tests."""
 
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
 import pytest
 from django.db import models
@@ -97,7 +97,7 @@ def mock_field_config() -> type:
     :return: A FieldConfig instance
     """
     # Create a mock field_config
-    mocked_field_config = Mock()
+    mocked_field_config = MagicMock()
 
     # Mock field_config.get method to return test values
     mocked_field_config.get.side_effect = lambda key: {
@@ -106,6 +106,8 @@ def mock_field_config() -> type:
         "choice_filters": {},
         "color_type": FieldType.BACKGROUND,
         "only_use_custom_colors": False,
+        "layout": "defaults_first",
+        "ordering": (),
     }[key]
     return mocked_field_config
 

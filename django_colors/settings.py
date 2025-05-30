@@ -17,6 +17,8 @@ CONFIG_DEFAULTS: dict[str, dict[str, Any]] = {
         "choice_model": None,
         "choice_filters": {},
         "only_use_custom_colors": False,
+        "ordering": (),
+        "layout": "defaults_first",
     }
 }
 

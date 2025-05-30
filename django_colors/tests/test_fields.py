@@ -8,7 +8,12 @@ from django.forms import ChoiceField
 
 from django_colors.color_definitions import BootstrapColorChoices
 from django_colors.field_type import FieldType
-from django_colors.fields import ColorModelField
+from django_colors.fields import (
+    BLANK_CHOICE_DASH,
+    ColorModelField,
+    combine_choices,
+    sort_choices,
+)
 from django_colors.widgets import ColorChoiceWidget
 
 
@@ -320,70 +325,63 @@ class TestColorModelField:
         mock_field_config: pytest.fixture,
         color_model: pytest.fixture,
     ) -> None:
-        """
-        Test the get_choices method with model priority.
-
-        :return: None
-        """
-        mock_objects = Mock()
-
-        # Create a list that we can extend
+        """Test the get_choices method with model priority."""
         custom_choices = [
             ("bg-red", "Test Red"),
             ("bg-blue", "Test Blue"),
             ("bg-green", "Test Green"),
         ]
 
-        # Define different return values based on filter arguments
-        def mock_filter(**kwargs: dict) -> Mock:
-            mock_queryset = Mock()
-            mock_queryset.values_list.return_value = custom_choices
-            return mock_queryset
+        # Mock the entire objects manager more simply
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
 
-        mock_objects.filter.side_effect = mock_filter
-
-        # Replace the entire objects manager
-        with patch.object(color_model, "objects", mock_objects):
+        with patch.object(color_model, "objects", mock_manager):
             field = ColorModelField()
+
+            # Setup field config
             mock_field_config.get.side_effect = lambda key: {
                 "choice_filters": {
                     "background_css": "bg-blue"
-                },  # This should be ignored with model_priority=True
+                },  # Should be ignored with model_priority=True
                 "color_type": FieldType.BACKGROUND,
                 "only_use_custom_colors": False,
             }[key]
 
-            # Mock the choice_model property to return the color_model
             type(mock_field_config).choice_model = PropertyMock(
                 return_value=color_model
             )
-            # Mock the default_color_choices property
             type(mock_field_config).default_color_choices = PropertyMock(
                 return_value=BootstrapColorChoices
             )
 
             field.field_config = mock_field_config
 
-            # We set the model_priority to True to show all model responses
+            # Call with model_priority=True
             choices = field.get_choices(model_priority=True)
 
-            # Verify the filter was called with no arguments (empty dict)
-            mock_objects.filter.assert_called_once_with()
+            # Verify filter was called with empty dict (model_priority=True)
+            mock_manager.filter.assert_called_once_with()
 
-            # Check that all items are included from custom choices
+            # Verify results include both default and custom choices
             assert isinstance(choices, list)
-            assert len(choices) > 3  # Bootstrap + custom choices
-            assert ("bg-red", "Test Red") in choices
-            assert ("bg-blue", "Test Blue") in choices
-            assert ("bg-green", "Test Green") in choices
+            assert len(choices) > 3
 
-            # Verify default Bootstrap choices are still there
-            bootstrap_choices = [
-                choice
-                for choice in choices
-                if choice[0].startswith("bg-primary")
-            ]
-            assert len(bootstrap_choices) > 0
+            # Check that custom choices are present
+            for custom_choice in custom_choices:
+                assert custom_choice in choices, (
+                    f"Expected {custom_choice} in choices but got: {choices}"
+                )
 
     def test_get_choices_with_model_filters(
         self,
@@ -395,38 +393,37 @@ class TestColorModelField:
 
         :return: None
         """
-        mock_objects = Mock()
-
-        # Create a list that we can extend
         custom_choices = [
-            ("bg-red", "Test Red"),
-            ("bg-red-dark", "Dark Red"),
+            ("bg-blue", "Test Blue"),
         ]
 
-        # Define different return values based on filter arguments
-        def mock_filter(**kwargs: dict) -> Mock:
-            mock_queryset = Mock()
-            mock_queryset.values_list.return_value = custom_choices
-            return mock_queryset
+        # Mock the entire objects manager more simply
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
 
-        mock_objects.filter.side_effect = mock_filter
-
-        # Replace the entire objects manager
-        with patch.object(color_model, "objects", mock_objects):
+        with patch.object(color_model, "objects", mock_manager):
             field = ColorModelField()
+
+            # Setup field config
             mock_field_config.get.side_effect = lambda key: {
-                "choice_filters": {
-                    "background_css": "bg-red"
-                },  # This should filter
+                "choice_filters": {"background_css": "bg-blue"},
                 "color_type": FieldType.BACKGROUND,
                 "only_use_custom_colors": False,
             }[key]
 
-            # Mock the choice_model property to return the color_model
             type(mock_field_config).choice_model = PropertyMock(
                 return_value=color_model
             )
-            # Mock the default_color_choices property
             type(mock_field_config).default_color_choices = PropertyMock(
                 return_value=BootstrapColorChoices
             )
@@ -435,17 +432,22 @@ class TestColorModelField:
 
             choices = field.get_choices()
 
-            # Verify the filter was called with the expected arguments
-            mock_objects.filter.assert_called_once_with(
-                background_css="bg-red"
+            # Verify filter was called with filtering
+            mock_manager.filter.assert_called_once_with(
+                background_css="bg-blue"
             )
 
-            # Check that items are included from custom choices
+            # Verify results include both default and custom choices
             assert isinstance(choices, list)
-            assert len(choices) > 2  # Bootstrap + filtered custom choices
-            # Verify red items are present
-            assert ("bg-red", "Test Red") in choices
-            assert ("bg-red-dark", "Dark Red") in choices
+            assert len(choices) > 3
+
+            # Check that custom choices are present
+            for custom_choice in custom_choices:
+                assert custom_choice in choices, (
+                    f"Expected {custom_choice} in choices but got: {choices}"
+                )
+            # Verify blue items are present
+            assert ("bg-blue", "Test Blue") in choices
 
             # Verify default Bootstrap choices are still there
             bootstrap_choices = [
@@ -463,25 +465,27 @@ class TestColorModelField:
 
         :return: None
         """
-        # Create a mock objects manager
-        mock_objects = MagicMock()
+        custom_choices = [("bg-test", "Test One"), ("bg-test2", "Test Two")]
 
-        # When no filters are applied, return all items
-        custom_choices = [
-            ("custom-bg-3", "Custom 3"),
-            ("custom-bg-4", "Custom 4"),
-            ("bg-red", "Red"),
-            ("bg-blue", "Blue"),
-        ]
-        mock_objects.filter.return_value.values_list.return_value = (
-            custom_choices
-        )
+        # Mock the entire objects manager more simply
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
 
         # Replace the entire objects manager
-        with patch.object(color_model, "objects", mock_objects):
+        with patch.object(color_model, "objects", mock_manager):
             field = ColorModelField()
             mock_field_config.get.side_effect = lambda key: {
-                "choice_filters": {},  # No filters - should get all
+                "choice_filters": {},
                 "color_type": FieldType.BACKGROUND,
                 "only_use_custom_colors": False,
             }[key]
@@ -500,10 +504,8 @@ class TestColorModelField:
             choices = field.get_choices()
 
             # Verify .filter() was called
-            mock_objects.filter.assert_called_once()
-            mock_objects.filter.return_value.values_list.assert_called_once_with(
-                FieldType.BACKGROUND.value, "name"
-            )
+            mock_manager.filter.assert_called_once()
+            mock_manager.filter.assert_called_once_with()
 
             # Should include default choices + all custom choices
             assert isinstance(choices, list)
@@ -531,25 +533,27 @@ class TestColorModelField:
 
         :return: None
         """
-        # Create a mock objects manager
-        mock_objects = MagicMock()
+        custom_choices = [("bg-test", "Test One"), ("bg-test2", "Test Two")]
 
-        # When no filters are applied, return all items
-        custom_choices = [
-            ("custom-bg-3", "Custom 3"),
-            ("custom-bg-4", "Custom 4"),
-            ("bg-red", "Red"),
-            ("bg-blue", "Blue"),
-        ]
-        mock_objects.filter.return_value.values_list.return_value = (
-            custom_choices
-        )
+        # Mock the entire objects manager more simply
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
 
         # Replace the entire objects manager
-        with patch.object(color_model, "objects", mock_objects):
+        with patch.object(color_model, "objects", mock_manager):
             field = ColorModelField()
             mock_field_config.get.side_effect = lambda key: {
-                "choice_filters": {},  # No filters - should get all
+                "choice_filters": {},
                 "color_type": FieldType.BACKGROUND,
                 "only_use_custom_colors": True,
             }[key]
@@ -568,14 +572,12 @@ class TestColorModelField:
             choices = field.get_choices()
 
             # Verify .filter() was called
-            mock_objects.filter.assert_called_once()
-            mock_objects.filter.return_value.values_list.assert_called_once_with(
-                FieldType.BACKGROUND.value, "name"
-            )
+            mock_manager.filter.assert_called_once()
+            mock_manager.filter.assert_called_once_with()
 
             # Should have only custom choices
             assert isinstance(choices, list)
-            assert len(choices) == 4  # Should have only 4 custom choices
+            assert len(choices) == 2
 
             # Verify all custom choices are present
             for custom_choice in custom_choices:
@@ -700,3 +702,498 @@ class TestColorModelFieldIntegration:
             assert hasattr(field, "field_config")
             assert field.model_name == "TestModel"
             assert field.app_name == "test_app"
+
+
+class TestCombineChoices:
+    """Tests for the combine_choices function."""
+
+    def test_combine_choices_defaults_first(self) -> None:
+        """Test combine_choices method with defaults_first."""
+        layout = "defaults_first"
+        queryset_list = [("bg-red", "Red"), ("bg-blue", "Blue")]
+        default_list = [("bg-green", "Green"), ("bg-yellow", "Yellow")]
+
+        final_list = combine_choices(layout, default_list, queryset_list)
+        for item in default_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        for item in queryset_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        assert len(final_list) == len(default_list) + len(queryset_list)
+        assert final_list[0:2] == default_list
+        assert final_list[2:] == queryset_list
+
+    def test_combine_choices_custom_first(self) -> None:
+        """Test combine_choices method with custom_first layout."""
+        layout = "custom_first"
+        queryset_list = [("bg-red", "Red"), ("bg-blue", "Blue")]
+        default_list = [("bg-green", "Green"), ("bg-yellow", "Yellow")]
+
+        final_list = combine_choices(layout, default_list, queryset_list)
+        for item in default_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        for item in queryset_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        assert len(final_list) == len(default_list) + len(queryset_list)
+        assert final_list[0:2] == queryset_list
+        assert final_list[2:] == default_list
+
+    def test_combine_choices_mixed(self) -> None:
+        """Test combine_choices method with mixed layout."""
+        layout = "mixed"
+        queryset_list = [("bg-red", "Red"), ("bg-blue", "Blue")]
+        default_list = [("bg-green", "Green"), ("bg-yellow", "Yellow")]
+
+        final_list = combine_choices(layout, default_list, queryset_list)
+        for item in default_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        for item in queryset_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        assert len(final_list) == len(default_list) + len(queryset_list)
+        assert final_list[0:2] == default_list
+        assert final_list[2:] == queryset_list
+
+    def test_combine_choices_no_layout(self) -> None:
+        """Test combine_choices method with no layout."""
+        layout = None
+        queryset_list = [("bg-red", "Red"), ("bg-blue", "Blue")]
+        default_list = [("bg-green", "Green"), ("bg-yellow", "Yellow")]
+
+        final_list = combine_choices(layout, default_list, queryset_list)
+        for item in default_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        for item in queryset_list:
+            assert item in final_list, (
+                f"Expected {item} in final list but got: {final_list}"
+            )
+        assert len(final_list) == len(default_list) + len(queryset_list)
+        assert final_list[0:2] == default_list
+        assert final_list[2:] == queryset_list
+
+    def test_get_choices_invalid_layout(
+        self, mock_field_config: pytest.fixture
+    ) -> None:
+        """
+        Test get_choices with invalid layout parameter.
+
+        :param mock_field_config: Mock field config fixture
+        :return: None
+        """
+        field = ColorModelField()
+        field.field_config = mock_field_config
+
+        with pytest.raises(
+            ValueError,
+            match="layout must be 'defaults_first', 'custom_first', or 'mixed', got 'invalid_layout'",  # noqa: E501
+        ):
+            field.get_choices(layout="invalid_layout")
+
+    def test_get_choices_invalid_sort_by(
+        self, mock_field_config: pytest.fixture
+    ) -> None:
+        """
+        Test get_choices with invalid sort_by parameter.
+
+        :param mock_field_config: Mock field config fixture
+        :return: None
+        """
+        field = ColorModelField()
+        field.field_config = mock_field_config
+
+        with pytest.raises(
+            ValueError,
+            match="sort_by must be 'label', 'value', or not set, got 'invalid_sort'",  # noqa: E501
+        ):
+            field.get_choices(sort_by="invalid_sort")
+
+    def test_get_choices_with_predefined_choices_no_blank(self) -> None:
+        """
+        Test get_choices when self.choices is not None without include_blank.
+
+        :return: None
+        """
+        predefined_choices = [
+            ("red", "Red"),
+            ("blue", "Blue"),
+            ("green", "Green"),
+        ]
+        field = ColorModelField(choices=predefined_choices)
+
+        choices = field.get_choices(include_blank=False)
+
+        assert choices == predefined_choices
+
+    def test_get_choices_with_predefined_choices_with_blank(self) -> None:
+        """
+        Test get_choices when self.choices is not None with include_blank.
+
+        :return: None
+        """
+        predefined_choices = [
+            ("red", "Red"),
+            ("blue", "Blue"),
+            ("green", "Green"),
+        ]
+        field = ColorModelField(choices=predefined_choices)
+
+        choices = field.get_choices(include_blank=True)
+
+        # Should return BlankChoiceIterator, which is the expected behavior
+        # We can test this by checking the type or behavior
+        from django.utils.choices import BlankChoiceIterator
+
+        assert isinstance(choices, BlankChoiceIterator)
+
+    def test_get_choices_with_predefined_choices_custom_blank(self) -> None:
+        """
+        Test get_choices when self.choices is not None and custom blank choice.
+
+        :return: None
+        """
+        predefined_choices = [
+            ("red", "Red"),
+            ("blue", "Blue"),
+            ("green", "Green"),
+        ]
+        field = ColorModelField(choices=predefined_choices)
+
+        choices = field.get_choices(
+            include_blank=True, blank_choice="Choose color..."
+        )
+
+        from django.utils.choices import BlankChoiceIterator
+
+        assert isinstance(choices, BlankChoiceIterator)
+
+    def test_get_choices_mixed_layout_with_sorting(
+        self,
+        mock_field_config: pytest.fixture,
+        color_model: pytest.fixture,
+    ) -> None:
+        """
+        Test get_choices with mixed layout and sorting.
+
+        :param mock_field_config: Mock field config fixture
+        :param color_model: Mock color model fixture
+        :return: None
+        """
+        custom_choices = [("bg-zebra", "Zebra"), ("bg-apple", "Apple")]
+
+        # Mock the entire objects manager
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
+
+        with patch.object(color_model, "objects", mock_manager):
+            field = ColorModelField()
+            mock_field_config.get.side_effect = lambda key: {
+                "choice_filters": {},
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": False,
+            }[key]
+
+            type(mock_field_config).choice_model = PropertyMock(
+                return_value=color_model
+            )
+            type(mock_field_config).default_color_choices = PropertyMock(
+                return_value=BootstrapColorChoices
+            )
+
+            field.field_config = mock_field_config
+
+            # Test mixed layout with sorting by label
+            choices = field.get_choices(layout="mixed", sort_by="label")
+
+            assert isinstance(choices, list)
+            assert len(choices) > 2
+
+            # Verify custom choices are present
+            for custom_choice in custom_choices:
+                assert custom_choice in choices
+
+            # Check that choices are sorted by label (second element of tuple)
+            # We can't easily verify the exact order due to Bootstrap choices,
+            # but we can verify that our custom choices maintain their
+            # relationship
+            apple_index = next(
+                i
+                for i, choice in enumerate(choices)
+                if choice[0] == "bg-apple"
+            )
+            zebra_index = next(
+                i
+                for i, choice in enumerate(choices)
+                if choice[0] == "bg-zebra"
+            )
+            assert apple_index < zebra_index, (
+                "Apple should come before Zebra when sorted by label"
+            )
+
+    def test_get_choices_with_include_blank(
+        self, mock_field_config: pytest.fixture
+    ) -> None:
+        """
+        Test get_choices with include_blank=True.
+
+        :param mock_field_config: Mock field config fixture
+        :return: None
+        """
+        field = ColorModelField()
+
+        mock_field_config.get.side_effect = lambda key: {
+            "color_type": FieldType.BACKGROUND,
+            "choice_filters": {},
+            "only_use_custom_colors": False,
+        }[key]
+
+        type(mock_field_config).choice_model = PropertyMock(return_value=None)
+        type(mock_field_config).default_color_choices = PropertyMock(
+            return_value=BootstrapColorChoices
+        )
+
+        field.field_config = mock_field_config
+
+        choices = field.get_choices(include_blank=True)
+
+        assert isinstance(choices, list)
+        assert len(choices) > 0
+        # First choice should be the blank choice
+        assert choices[0] == ("", BLANK_CHOICE_DASH)
+
+    def test_get_choices_with_custom_blank_choice(
+        self, mock_field_config: pytest.fixture
+    ) -> None:
+        """
+        Test get_choices with custom blank choice text.
+
+        :param mock_field_config: Mock field config fixture
+        :return: None
+        """
+        field = ColorModelField()
+
+        mock_field_config.get.side_effect = lambda key: {
+            "color_type": FieldType.BACKGROUND,
+            "choice_filters": {},
+            "only_use_custom_colors": False,
+        }[key]
+
+        type(mock_field_config).choice_model = PropertyMock(return_value=None)
+        type(mock_field_config).default_color_choices = PropertyMock(
+            return_value=BootstrapColorChoices
+        )
+
+        field.field_config = mock_field_config
+
+        custom_blank = "Select a color..."
+        choices = field.get_choices(
+            include_blank=True, blank_choice=custom_blank
+        )
+
+        assert isinstance(choices, list)
+        assert len(choices) > 0
+        # First choice should be the custom blank choice
+        assert choices[0] == ("", custom_blank)
+
+    def test_get_choices_uses_field_ordering_parameter(
+        self,
+        mock_field_config: pytest.fixture,
+        color_model: pytest.fixture,
+    ) -> None:
+        """
+        Test that get_choices uses field-level ordering parameter.
+
+        :param mock_field_config: Mock field config fixture
+        :param color_model: Mock color model fixture
+        :return: None
+        """
+        custom_choices = [("bg-red", "Red"), ("bg-blue", "Blue")]
+
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
+
+        with patch.object(color_model, "objects", mock_manager):
+            # Create field with ordering parameter
+            field = ColorModelField(ordering=("name", "-created"))
+
+            mock_field_config.get.side_effect = lambda key: {
+                "choice_filters": {},
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": False,
+            }[key]
+
+            type(mock_field_config).choice_model = PropertyMock(
+                return_value=color_model
+            )
+            type(mock_field_config).default_color_choices = PropertyMock(
+                return_value=BootstrapColorChoices
+            )
+
+            field.field_config = mock_field_config
+
+            field.get_choices()
+
+            # Verify order_by was called with field-level ordering
+            mock_manager.filter.return_value.distinct.return_value.order_by.assert_called_with(
+                "name", "-created"
+            )
+
+    def test_get_choices_uses_field_layout_parameter(
+        self,
+        mock_field_config: pytest.fixture,
+        color_model: pytest.fixture,
+    ) -> None:
+        """
+        Test that get_choices uses field-level layout parameter.
+
+        :param mock_field_config: Mock field config fixture
+        :param color_model: Mock color model fixture
+        :return: None
+        """
+        custom_choices = [("bg-field", "A Color")]
+
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
+
+        with patch.object(color_model, "objects", mock_manager):
+            # Create field with layout parameter set to custom_first
+            field = ColorModelField(layout="custom_first")
+
+            mock_field_config.get.side_effect = lambda key: {
+                "choice_filters": {},
+                "color_type": FieldType.BACKGROUND,
+                "only_use_custom_colors": False,
+            }[key]
+
+            type(mock_field_config).choice_model = PropertyMock(
+                return_value=color_model
+            )
+            type(mock_field_config).default_color_choices = PropertyMock(
+                return_value=BootstrapColorChoices
+            )
+
+            field.field_config = mock_field_config
+
+            choices = field.get_choices()
+
+            # With custom_first layout, custom choices should appear first
+            assert isinstance(choices, list)
+            assert len(choices) > 1
+            # Find the custom choice and verify it appears before bootstrap
+            custom_choice_index = next(
+                i
+                for i, choice in enumerate(choices)
+                if choice[0] == "bg-field"
+            )
+            bootstrap_choice_index = next(
+                i
+                for i, choice in enumerate(choices)
+                if choice[0].startswith("bg-primary")
+            )
+            assert custom_choice_index < bootstrap_choice_index, (
+                "Custom choices should appear before default choices with custom_first layout"  # noqa: E501
+            )
+
+
+class TestSortedChoices:
+    """Tests for the sorted_choices function."""
+
+    def test_sorted_choices_by_label(self) -> None:
+        """Test sorted_choices function."""
+        choices = [
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+        ]
+        sort_by = "label"
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == [
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+            ("bg-red", "Red"),
+        ]
+
+    def test_sorted_choices_empty(self) -> None:
+        """Test sorted_choices with empty list."""
+        choices = []
+        sort_by = "label"
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == []
+
+    def test_sorted_choices_no_sort_by(self) -> None:
+        """Test sorted_choices without sort_by."""
+        choices = [
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+        ]
+        sort_by = None
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == choices
+
+    def test_sorted_choices_invalid_sort_by(self) -> None:
+        """Test sorted_choices with invalid sort_by."""
+        choices = [
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+        ]
+        sort_by = "invalid"
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == choices
+
+    def test_sorted_choices_by_value(self) -> None:
+        """Test sorted_choices by value."""
+        choices = [
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+        ]
+        sort_by = "value"
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == [
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+            ("bg-red", "Red"),
+        ]

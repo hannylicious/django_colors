@@ -184,10 +184,34 @@ A custom Django field for selecting colors, with options for:
 - Using predefined or custom colors
 - Specifying field type (background or text)
 - Using a custom model or queryset for color options
-- get_choices() can pass `additional_filters` to make the field do additional
- filtering on the model (and any existing filters applied to it)
-- get_choices(): can pass `model_priority` to make the field return all
- model objects instead of any queryset filtered objects.
+- String model references (e.g., `"myapp.MyModel"`)
+- Flexible choice layout and sorting options
+
+#### Field Parameters
+
+- `model`: Model class or string reference for custom colors
+- `model_filters`: Dictionary of filters to apply to the custom model queryset
+- `color_type`: FieldType.BACKGROUND or FieldType.TEXT
+- `default_color_choices`: Class to use for default color choices
+- `only_use_custom_colors`: If True, only show custom colors (no defaults)
+- `ordering`: Tuple of field names for ordering custom model choices
+- `layout`: Layout for combining default and custom choices ("defaults_first", "custom_first", "mixed")
+
+#### get_choices() Method
+
+The `get_choices()` method provides flexible options for retrieving color choices:
+
+```python
+field.get_choices(
+    additional_filters=None,  # Extra filters for model queryset
+    model_priority=False,     # Ignore filters and return all model options
+    include_blank=False,      # Include blank option
+    blank_choice="---------", # Custom blank choice text
+    ordering=None,            # Override field ordering
+    layout=None,              # Override field layout
+    sort_by=None,             # Sort by "value" or "label"
+)
+```
 
 ### ColorModel
 
@@ -209,6 +233,10 @@ The `ColorModelField` class will render as a Select field in forms.
 
 ```python
 # models.py
+from django.db import models
+from django_colors.models import ColorModel
+from django_colors.fields import ColorModelField
+
 class TestAppColor(ColorModel):
     active = models.BooleanField(default=True)
 
@@ -223,24 +251,32 @@ class TestThing(models.Model):
         # Show only active colors along with default colors
         model_filters={"active": True},
         only_use_custom_colors=False,
+        ordering=("name",),  # Order custom colors by name
+        layout="defaults_first",  # Default colors first, then custom
         null=True,
         blank=True,
     )
-    # show only default colors
+    # Show only default colors
     text_color = ColorModelField()
 
 # forms.py
+from django import forms
+
 class TestThingForm(forms.ModelForm):
     class Meta:
         model = TestThing
-        fields = ["background_color"]
-
+        fields = ["background_color", "text_color"]
 ```
 
 #### Standard form example
 
 ```python
 # models.py
+from django.db import models
+from django_colors.models import ColorModel
+from django_colors.fields import ColorModelField
+from django_colors.widgets import ColorChoiceWidget
+
 class TestAppColor(ColorModel):
     active = models.BooleanField(default=True)
 
@@ -252,20 +288,20 @@ class TestThing(models.Model):
     identity = models.CharField(max_length=100)
     background_color = ColorModelField(
         model=TestAppColor,
-        # Show only active colors along with default colors
         model_filters={"active": True},
         only_use_custom_colors=False,
         null=True,
         blank=True,
     )
-    # show only default colors
     text_color = ColorModelField()
 
 # forms.py
+from django import forms
+
 class StandardForm(forms.Form):
     color = forms.ChoiceField(
         required=False,
-        choices=TestThing._meta.get_field("background_color").get_choices,
+        choices=TestThing._meta.get_field("background_color").get_choices(),
         widget=ColorChoiceWidget(
             attrs={"class": "form-control", "hx-target": "#something"}
         ),
@@ -274,11 +310,16 @@ class StandardForm(forms.Form):
 
 #### Advanced form example
 
-- This showcases how to use the `get_choices` method to override the presets in
- the form.
+This showcases how to use the `get_choices` method to override the presets in the form:
 
 ```python
 # models.py
+from django.db import models
+from django_colors.models import ColorModel
+from django_colors.fields import ColorModelField
+from django_colors.widgets import ColorChoiceWidget
+from functools import partial
+
 class TestAppColor(ColorModel):
     active = models.BooleanField(default=True)
 
@@ -290,27 +331,72 @@ class TestThing(models.Model):
     identity = models.CharField(max_length=100)
     background_color = ColorModelField(
         model=TestAppColor,
-        # Show only active colors along with default colors
         model_filters={"active": True},
         only_use_custom_colors=False,
         null=True,
         blank=True,
     )
-    # show only default colors
     text_color = ColorModelField()
 
 # forms.py
+from django import forms
+from functools import partial
+
 class AdvancedForm(forms.Form):
-    # Need to see ALL options including inactive colors
-    color = forms.ChoiceField(
+    # Show ALL options including inactive colors
+    all_colors = forms.ChoiceField(
         required=False,
         choices=partial(
             TestThing._meta.get_field("background_color").get_choices,
-            model_priority=True,
+            model_priority=True,  # Ignore model_filters
         ),
         widget=ColorChoiceWidget(
             attrs={"class": "form-control", "hx-target": "#something"}
         ),
+    )
+
+    # Custom layout with sorting
+    sorted_colors = forms.ChoiceField(
+        required=False,
+        choices=partial(
+            TestThing._meta.get_field("background_color").get_choices,
+            layout="custom_first",
+            sort_by="label",
+            include_blank=True,
+            blank_choice="Choose a color...",
+        ),
+        widget=ColorChoiceWidget(),
+    )
+
+    # Only custom colors, sorted by value
+    custom_only = forms.ChoiceField(
+        required=False,
+        choices=partial(
+            TestThing._meta.get_field("background_color").get_choices,
+            additional_filters={"active": True},
+            layout="mixed",
+            sort_by="value",
+        ),
+        widget=ColorChoiceWidget(),
+    )
+```
+
+#### Using String Model References
+
+You can reference models using strings, which is useful for avoiding circular imports:
+
+```python
+class MyModel(models.Model):
+    # Reference another app's model
+    color = ColorModelField(
+        model="otherapp.ColorModel",
+        model_filters={"active": True},
+    )
+
+    # Reference a model in the same app
+    theme_color = ColorModelField(
+        model="myapp.ThemeColor",
+        only_use_custom_colors=True,
     )
 ```
 
