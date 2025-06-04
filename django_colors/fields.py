@@ -202,6 +202,7 @@ class ColorModelField(CharField):
         self,
         additional_filters: dict | None = None,
         model_priority: bool = False,
+        only_use_default_colors: bool = False,
         include_blank: bool = False,
         blank_choice: str = BLANK_CHOICE_DASH,
         ordering: tuple | None = None,
@@ -216,6 +217,7 @@ class ColorModelField(CharField):
 
         :argument additional_filters: Additional filters for model queryset
         :argument model_priority: Prioritize model choices (ignores filters)
+        :argument only_use_default_colors: Whether to use only default colors
         :argument include_blank: Whether to include a blank choice option
         :argument blank_choice: Blank choice label
         :argument ordering: Database ordering for custom model choices
@@ -242,7 +244,7 @@ class ColorModelField(CharField):
 
         # Use the resolved choice_model
         resolved_choice_model = self.field_config.choice_model
-        if not resolved_choice_model:
+        if not resolved_choice_model or only_use_default_colors:
             # return the default choices if no model is set
             final_choices = default_choices
         else:
