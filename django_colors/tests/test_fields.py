@@ -1139,6 +1139,23 @@ class TestCombineChoices:
 class TestSortedChoices:
     """Tests for the sorted_choices function."""
 
+    def test_sorted_choices_by_label_with_various_caps(self) -> None:
+        """Test sorted_choices function."""
+        choices = [
+            ("bg-indigo", "indigo"),
+            ("bg-red", "Red"),
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+        ]
+        sort_by = "label"
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == [
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+            ("bg-indigo", "indigo"),
+            ("bg-red", "Red"),
+        ]
+
     def test_sorted_choices_by_label(self) -> None:
         """Test sorted_choices function."""
         choices = [
@@ -1182,6 +1199,23 @@ class TestSortedChoices:
         sort_by = "invalid"
         sorted_choices = sort_choices(choices, sort_by)
         assert sorted_choices == choices
+
+    def test_sorted_choices_by_value_with_various_caps(self) -> None:
+        """Test sorted_choices by value."""
+        choices = [
+            ("bg-red", "Red"),
+            ("bg-Indigo", "Indigo"),
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+        ]
+        sort_by = "value"
+        sorted_choices = sort_choices(choices, sort_by)
+        assert sorted_choices == [
+            ("bg-blue", "Blue"),
+            ("bg-green", "Green"),
+            ("bg-Indigo", "Indigo"),
+            ("bg-red", "Red"),
+        ]
 
     def test_sorted_choices_by_value(self) -> None:
         """Test sorted_choices by value."""
@@ -1392,7 +1426,9 @@ class TestSortedChoices:
             field.field_config = mock_field_config
 
             # Test with only_use_default_colors=True
-            choices = field.get_choices(only_use_default_colors=True)
+            choices = field.get_choices(
+                sort_by=None, only_use_default_colors=True
+            )
 
             # Verify the model was NOT queried
             mock_manager.filter.assert_not_called()
