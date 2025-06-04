@@ -35,6 +35,7 @@ def combine_choices(
 def sort_choices(
     choices: list,
     sort_by: str | None = None,
+    ignore_case: bool = True,
 ) -> list:
     """
     Sort the choices.
@@ -42,12 +43,20 @@ def sort_choices(
     :argument choices: List of color choices
     :returns: Sorted list of choices
     """
-    if sort_by == "value":
-        # sort by the value (first item in tuple)
-        choices.sort(key=lambda x: x[0])
-    if sort_by == "label":
-        # sort by the label (second item in tuple)
-        choices.sort(key=lambda x: x[1])
+    if ignore_case:
+        if sort_by == "value":
+            # sort by the value (first item in tuple)
+            choices.sort(key=lambda x: x[0].casefold())
+        if sort_by == "label":
+            # sort by the label (second item in tuple)
+            choices.sort(key=lambda x: x[1].casefold())
+    else:
+        if sort_by == "value":
+            # sort by the value (first item in tuple)
+            choices.sort(key=lambda x: x[0])
+        if sort_by == "label":
+            # sort by the label (second item in tuple)
+            choices.sort(key=lambda x: x[1])
 
     return choices
 
@@ -203,6 +212,7 @@ class ColorModelField(CharField):
         additional_filters: dict | None = None,
         model_priority: bool = False,
         only_use_default_colors: bool = False,
+        ignore_case: bool = True,
         include_blank: bool = False,
         blank_choice: str = BLANK_CHOICE_DASH,
         ordering: tuple | None = None,
@@ -246,7 +256,12 @@ class ColorModelField(CharField):
         resolved_choice_model = self.field_config.choice_model
         if not resolved_choice_model or only_use_default_colors:
             # return the default choices if no model is set
-            final_choices = default_choices
+            if sort_by:
+                final_choices = sort_choices(
+                    default_choices, sort_by, ignore_case
+                )
+            else:
+                final_choices = default_choices
         else:
             # get the queryset, filter/sort/etc.
             # get the filters (most narrow scope to least narrow scope)
@@ -270,8 +285,12 @@ class ColorModelField(CharField):
                 # We sort these here in case they want things sorted, but
                 # seperated so the combine_choices will keep the options
                 # in their places, but sorted as expected.
-                default_choices = sort_choices(default_choices, sort_by)
-                queryset_choices = sort_choices(queryset_choices, sort_by)
+                default_choices = sort_choices(
+                    default_choices, sort_by, ignore_case
+                )
+                queryset_choices = sort_choices(
+                    queryset_choices, sort_by, ignore_case
+                )
 
             if self.field_config.get("only_use_custom_colors"):
                 final_choices = queryset_choices
@@ -283,7 +302,7 @@ class ColorModelField(CharField):
                 )
         if sort_by and layout == "mixed":
             # Mixed list of choices, sort the entire list
-            final_choices = sort_choices(final_choices, sort_by)
+            final_choices = sort_choices(final_choices, sort_by, ignore_case)
         if include_blank:
             final_choices.insert(0, ("", blank_choice))
         return final_choices
