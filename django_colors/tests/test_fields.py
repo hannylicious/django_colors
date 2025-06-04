@@ -1197,3 +1197,211 @@ class TestSortedChoices:
             ("bg-green", "Green"),
             ("bg-red", "Red"),
         ]
+
+    def test_get_choices_with_only_use_default_colors(
+        self, mock_field_config: pytest.fixture, color_model: pytest.fixture
+    ) -> None:
+        """
+        Test get_choices with only_use_default_colors=True ignores model.
+
+        :param mock_field_config: Mock field config fixture
+        :param color_model: Mock color model fixture
+        :return: None
+        """
+        # Set up custom choices that should be ignored
+        custom_choices = [
+            ("bg-custom1", "Custom 1"),
+            ("bg-custom2", "Custom 2"),
+        ]
+
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
+
+        with patch.object(color_model, "objects", mock_manager):
+            field = ColorModelField()
+
+            # Mock the field config to have a model (which should be ignored)
+            mock_field_config.get.side_effect = lambda key: {
+                "color_type": FieldType.BACKGROUND,
+                "choice_filters": {},
+                "only_use_custom_colors": False,
+            }[key]
+
+            # Set up the choice_model (this should be ignored)
+            type(mock_field_config).choice_model = PropertyMock(
+                return_value=color_model
+            )
+
+            # Create a mock color choices class for default choices
+            mock_color_choices_class = MagicMock()
+            mock_color_choices_instance = MagicMock()
+            mock_color_choices_instance.choices = [
+                ("bg-primary", "Primary"),
+                ("bg-secondary", "Secondary"),
+            ]
+            mock_color_choices_class.return_value = mock_color_choices_instance
+
+            type(mock_field_config).default_color_choices = PropertyMock(
+                return_value=mock_color_choices_class
+            )
+
+            field.field_config = mock_field_config
+
+            # Test with only_use_default_colors=True
+            choices = field.get_choices(
+                include_blank=True, only_use_default_colors=True
+            )
+
+            # Verify the model was NOT queried (since we're using defaults)
+            mock_manager.filter.assert_not_called()
+
+            assert isinstance(choices, list)
+            assert len(choices) == 3  # blank + 2 default choices
+            # First choice should be the blank choice
+            assert choices[0] == ("", BLANK_CHOICE_DASH)
+            # Should only contain default choices, NOT custom choices
+            assert choices[1:] == [
+                ("bg-primary", "Primary"),
+                ("bg-secondary", "Secondary"),
+            ]
+
+            # Verify custom choices are NOT in the result
+            for custom_choice in custom_choices:
+                assert custom_choice not in choices
+
+    def test_get_choices_without_only_use_default_colors_includes_custom(
+        self, mock_field_config: pytest.fixture, color_model: pytest.fixture
+    ) -> None:
+        """
+        Test that without only_use_default_colors, custom choices are included.
+
+        This serves as a control test to verify the parameter actually works.
+        """
+        # Set up custom choices that SHOULD be included
+        custom_choices = [
+            ("bg-custom1", "Custom 1"),
+            ("bg-custom2", "Custom 2"),
+        ]
+
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
+
+        with patch.object(color_model, "objects", mock_manager):
+            field = ColorModelField()
+
+            mock_field_config.get.side_effect = lambda key: {
+                "color_type": FieldType.BACKGROUND,
+                "choice_filters": {},
+                "only_use_custom_colors": False,
+            }[key]
+
+            type(mock_field_config).choice_model = PropertyMock(
+                return_value=color_model
+            )
+
+            # Create mock default choices
+            mock_color_choices_class = MagicMock()
+            mock_color_choices_instance = MagicMock()
+            mock_color_choices_instance.choices = [
+                ("bg-primary", "Primary"),
+                ("bg-secondary", "Secondary"),
+            ]
+            mock_color_choices_class.return_value = mock_color_choices_instance
+
+            type(mock_field_config).default_color_choices = PropertyMock(
+                return_value=mock_color_choices_class
+            )
+
+            field.field_config = mock_field_config
+
+            # Test WITHOUT only_use_default_colors (normal behavior)
+            choices = field.get_choices(include_blank=True)
+
+            # Verify the model WAS queried (normal behavior)
+            mock_manager.filter.assert_called_once()
+
+            assert isinstance(choices, list)
+            assert len(choices) == 5  # blank + 2 default + 2 custom choices
+
+            # Should contain BOTH default and custom choices
+            default_choices = [
+                ("bg-primary", "Primary"),
+                ("bg-secondary", "Secondary"),
+            ]
+            for default_choice in default_choices:
+                assert default_choice in choices
+            for custom_choice in custom_choices:
+                assert custom_choice in choices
+
+    def test_get_choices_only_use_default_colors_with_bootstrap(
+        self, mock_field_config: pytest.fixture, color_model: pytest.fixture
+    ) -> None:
+        """Test only_use_default_colors with real BootstrapColorChoices."""
+        # Set up custom choices that should be ignored
+        custom_choices = [("bg-custom", "Custom Color")]
+
+        mock_manager = MagicMock()
+        # fmt: off
+        mock_manager.\
+        filter.\
+        return_value.\
+        distinct.\
+        return_value.\
+        order_by.\
+        return_value.\
+        values_list.\
+        return_value = custom_choices
+        # fmt: on
+
+        with patch.object(color_model, "objects", mock_manager):
+            field = ColorModelField()
+
+            mock_field_config.get.side_effect = lambda key: {
+                "color_type": FieldType.BACKGROUND,
+                "choice_filters": {},
+                "only_use_custom_colors": False,
+            }[key]
+
+            type(mock_field_config).choice_model = PropertyMock(
+                return_value=color_model
+            )
+            type(mock_field_config).default_color_choices = PropertyMock(
+                return_value=BootstrapColorChoices  # Use real class
+            )
+
+            field.field_config = mock_field_config
+
+            # Test with only_use_default_colors=True
+            choices = field.get_choices(only_use_default_colors=True)
+
+            # Verify the model was NOT queried
+            mock_manager.filter.assert_not_called()
+
+            # Should only contain Bootstrap choices
+            expected_bootstrap_choices = list(
+                BootstrapColorChoices(FieldType.BACKGROUND).choices
+            )
+            assert choices == expected_bootstrap_choices
+
+            # Verify custom choices are NOT included
+            assert ("bg-custom", "Custom Color") not in choices
