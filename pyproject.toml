@@ -8,7 +8,7 @@ name = "django-colors"
 version = "1.2.2"
 description = "An application to assist with css framework color selections."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = ["django>=4.2"]
 classifiers = [
   "Development Status :: 4 - Beta",
